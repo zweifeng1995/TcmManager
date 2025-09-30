@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>中医大脑</title>
+
+    <link rel="stylesheet" type="text/css" th:href="@{/css/bootstrap.min.css}"/>
+    <script type="text/javascript" th:src="@{/js/bootstrap.bundle.min.js}"></script>
+    <script type="text/javascript" th:src="@{/js/bootstrap.min.js}"></script>
+    <script type="text/javascript" th:src="@{/js/jquery.min.js}"></script>
+    <script th:inline="javascript">
+        let calculationMedicineList = [];
+        let allEmpProperties = [[${medicineDTO.properties}]];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const submit_medicine_form = document.getElementById('submit_medicine_form');
+            const delete_medicine_form = document.getElementById('delete_medicine_form');
+
+            submit_medicine_form.addEventListener('submit', function(event) {
+                event.preventDefault();
+                const formData = new FormData(this);
+                const method = submit_medicine_form.getAttribute('method');
+                let tips = "";
+                if (method == "POST") {
+                    tips = "添加";
+                }
+                if (method == "PUT") {
+                    tips = "修改";
+                }
+                $.ajax({
+                    url: "/medicines",
+                    type: method,
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (data) {
+                        showToast('success', '药品' + tips + '成功！', '操作成功');
+                        refreshTable();
+                    },
+                    error: function(xhr, status, error) {
+                        showToast('error', '药品' + tips + '失败', '操作失败');
+                    },
+                    complete: function() {
+                    }
+                })
+            });
+
+            delete_medicines_form.addEventListener('submit', function(event) {
+                event.preventDefault();
+                const formData = new FormData(this);
+                $.ajax({
+                    url: "/medicines",
+                    type: 'DELETE',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (data) {
+                        showToast('success', '药品删除成功！', '操作成功');
+                        delete_medicines_form.reset();
+                        clearCalculation();
+                        refreshTable();
+                    },
+                    error: function(xhr, status, error) {
+                        delete_medicines_form.reset();
+                        showToast('error', '删除药品失败！', '操作失败');
+                    },
+                    complete: function() {
+                    }
+                })
+            });
+        })
+
+        function openSubmitMedicineModal() {
+            document.getElementById('name').disabled = false;
+            const submit_medicine_form = document.getElementById('submit_medicine_form');
+            submit_medicine_form.reset();
+            allEmpProperties.forEach((property) => {
+                document.getElementById(property.kind).innerHTML = 0;
+                document.getElementById("span_" + property.kind).innerHTML = 0;
+            });
+            submit_medicine_form.method = 'POST';
+            const submit_medicine_modal = new bootstrap.Modal(document.getElementById('submit_medicine_modal'));
+            submit_medicine_modal.show();
+        }
+
+        function openEditMedicineModal(button) {
+            const row = button.closest('tr');
+            const cells = row.getElementsByTagName('td');
+            document.getElementById('name').value = cells[2].getElementsByTagName('p')[0].innerText;
+            document.getElementById('name').disabled = true;
+            document.getElementById('mmpResearch').value = cells[3].getElementsByTagName('p')[0].innerText;
+            document.getElementById('natureAndFlavor').value = cells[4].getElementsByTagName('p')[0].innerText;
+            document.getElementById('channelTropism').value = cells[5].getElementsByTagName('p')[0].innerText;
+            document.getElementById('efficacy').value = cells[6].getElementsByTagName('p')[0].innerText;
+            document.getElementById('clinicalApplication').value = cells[7].getElementsByTagName('p')[0].innerText;
+
+            const raw_kind_show = cells[8].getElementsByTagName('span');
+            let kind_show_map = new Map();
+            Array.from(raw_kind_show).forEach((kind) => {
+                kind_key_value = kind.dataset.role.split(":");
+                kind_key = kind_key_value[0];
+                kind_value = kind_key_value[1];
+                kind_show_map.set(kind_key, kind_value);
+            })
+
+            allEmpProperties.forEach((property) => {
+                document.getElementById(property.kind).value = 0;
+                document.getElementById("span_" + property.kind).innerHTML = 0;
+            });
+
+            kind_show_map.forEach((value, key) => {
+                document.getElementById(key).value = value;
+                document.getElementById("span_" + key).innerText = value;
+            })
+
+            const submit_medicine_form = document.getElementById('submit_medicine_form');
+            submit_medicine_form.method = 'PUT';
+            const submit_medicine_modal = new bootstrap.Modal(document.getElementById('submit_medicine_modal'));
+            submit_medicine_modal.show();
+        }
+
+        function refreshCalculationTable() {
+            let calculateMap = new Map();
+            for (let index = 0; index < allEmpProperties.length; index++) {
+                calculateMap.set(allEmpProperties[index].kind, 0);
+            }
+            for (let index = 0; index < calculationMedicineList.length; index++) {
+                let properties = calculationMedicineList[index].properties;
+                for (let jIndex = 0; jIndex < properties.length; jIndex++) {
+                    let value = calculateMap.get(properties[jIndex].kind);
+                    calculateMap.set(properties[jIndex].kind, value + properties[jIndex].level);
+                }
+            }
+            calculateMap.forEach((value, key) => {
+                let calculate_kind = document.getElementById("calculate_" + key);
+                calculate_kind.innerText = value;
+            });
+            let calculationTable = document.getElementById("calculationTableBody");
+            let newCalculationTableBody = calculationMedicineList.map((calculationMedicine, index) => `
+                <tr>
+                    <td style="text-align: center;">${index + 1}</td>
+                    <td style="text-align: center;">${calculationMedicine.name}</td>
+                    <td style="text-align: center;">
+                        <button type="submit" class="p-0 border-0 bg-transparent" onclick="deleteFromCalculation(this)" value="${calculationMedicine.id}">
+                            <img style="height: 20px; width: 20px" src="/img/subtract.png" alt="删除"/>
+                        </button>
+                    </td>
+                </tr>
+            `).join("");
+            calculationTable.innerHTML = newCalculationTableBody;
+            let deleteMedicinesInput = document.getElementById("deleteMedicines");
+            let query_ids = "";
+            calculationMedicineList.map(medicine => {
+                if (query_ids == "") {
+                    query_ids += medicine.id;
+                } else {
+                    query_ids += "," + medicine.id;
+                }
+            })
+            deleteMedicinesInput.value = query_ids;
+        }
+
+        function showToast(type, message, title) {
+            let toastId = 'toast-' + Date.now();
+            let toastHtml = `
+                <div id="${toastId}" class="toast align-items-center text-bg-${type === 'error' ? 'danger' : type} border-0" role="alert">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <strong>${title}</strong><br>
+                            <p class="text-break">
+                                ${message}
+                            </p>
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `;
+            let toastContainer = document.getElementById('toastContainer');
+            toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+
+            let toastElement = document.getElementById(toastId);
+            let toast = new bootstrap.Toast(toastElement, { delay: 3000 });
+            toast.show();
+
+            toastElement.addEventListener('hidden.bs.toast', function() {
+                toastElement.remove();
+            });
+        }
+
+        function clearCalculation() {
+            let checkboxes = document.getElementsByName("medicineCheckBox");
+            checkboxes.forEach((checkbox) => checkbox.checked = false);
+            calculationMedicineList = [];
+            refreshCalculationTable();
+        }
+
+        function deleteFromCalculation(deleteBtn) {
+            let checkbox = document.getElementById(deleteBtn.value);
+            if (null != checkbox) {
+                checkbox.checked = false;
+            }
+            calculationMedicineList.forEach((item, index) => {
+                if (item.id == deleteBtn.value) {
+                    calculationMedicineList.splice(index, 1);
+                }
+            });
+            refreshCalculationTable();
+        }
+
+        function deleteFromCalculationById(id) {
+            calculationMedicineList.forEach((item, index) => {
+                if (item.id == id) {
+                    calculationMedicineList.splice(index, 1);
+                }
+            });
+            refreshCalculationTable();
+        }
+
+        function addToCalculation(checkbox, medicine) {
+            if (calculationMedicineList.length >= 50) {
+                alert("1个药方最多添加50个中药！");
+                checkbox.checked = false;
+                return;
+            }
+            if (checkbox.checked) {
+                calculationMedicineList.push(medicine);
+            } else {
+                deleteFromCalculationById(medicine.id);
+            }
+            refreshCalculationTable();
+        }
+
+        function updateMdcPropKindSpanValue(id, value) {
+            document.getElementById("span_" + id).innerHTML = value;
+        }
+
+        function query() {
+            refreshTable();
+        }
+
+        function refreshTable(pageNum) {
+            if (pageNum == null) {
+                pageNum = 1;
+            }
+            let query_medicine_name = document.getElementById("query_medicine_name");
+            let query_efficacy = document.getElementById("query_efficacy");
+            let query_clinical_application = document.getElementById("query_clinical_application");
+
+            let queryKinds = "";
+            let properties = [[${medicineDTO.properties}]];
+            let kinds = properties.map(property => property.kind);
+            kinds.map(kind => {
+                query_kind_checkbox = document.getElementById("query_" + kind);
+                if (query_kind_checkbox != null && query_kind_checkbox.checked) {
+                    if (queryKinds == "") {
+                        queryKinds += kind;
+                    } else {
+                        queryKinds += "," + kind;
+                    }
+                }
+            })
+            let queryString = "?pageNum=" + pageNum;
+            if (query_medicine_name != null && query_medicine_name.value != null && query_medicine_name.value != "") {
+                queryString += "&name=" + query_medicine_name.value;
+            }
+            if (query_efficacy != null && query_efficacy.value != null && query_efficacy.value != "") {
+                queryString += "&efficacy=" + query_efficacy.value;
+            }
+            if (query_clinical_application != null && query_clinical_application.value != null && query_clinical_application.value != "") {
+                queryString += "&clinical_application=" + query_clinical_application.value;
+            }
+            if (queryKinds != "") {
+                queryString += "&mdc_prop_kinds=" + queryKinds;
+            }
+            $.ajax({
+                url: "/refreshTable" + queryString,
+                type: 'GET',
+                success: function (data) {
+                    $("#medicineTable").html(data);
+                    let medicineCheckBoxList = document.getElementsByName('medicineCheckBox');
+                    Array.from(medicineCheckBoxList).forEach(function(checkbox) {
+                        calculationMedicineList.forEach(item => {
+                            if (item.id == checkbox.id) {
+                                checkbox.checked = true;
+                                return;
+                            }
+                        });
+                    });
+                }
+            })
+        }
+    </script>
+</head>
+
+<body>
+<!-- 顶部导航 -->
+<nav th:replace="page_template :: top_nav"></nav>
+<div class="d-flex">
+    <!-- 侧边导航 -->
+    <div th:replace="~{page_template :: side_nav(uri='/medicines')}"></div>
+    <!-- 内容 -->
+    <div class="d-flex flex-column p-3">
+        <div class="row mt-3">
+            <div class="col-9">
+                <h2 class="fw-bold text-center">中药列表</h2>
+                <div class="container-fluid rounded border border-1">
+                    <div class="row my-3">
+                        <div class="col-3 align-middle">
+                            <div class="row">
+                                <label for="query_medicine_name" class="col-3 col-form-label">
+                                    <strong>名称：</strong>
+                                </label>
+                                <div class="col-9">
+                                    <input type="text" class="form-control" name="query_medicine_name"
+                                           id="query_medicine_name"
+                                           placeholder="请输入..."/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-3 align-middle">
+                            <div class="row">
+                                <label for="query_efficacy" class="col-3 col-form-label">
+                                    <strong>功效：</strong>
+                                </label>
+                                <div class="col-9">
+                                    <input type="text" class="form-control" name="query_efficacy" id="query_efficacy"
+                                           placeholder="请输入..."/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-3 align-middle">
+                            <div class="row">
+                                <label for="query_clinical_application" class="col-4 col-form-label">
+                                    <strong>临床应用：</strong>
+                                </label>
+                                <div class="col-8">
+                                    <input type="text" class="form-control" name="query_clinical_application"
+                                           id="query_clinical_application" placeholder="请输入..."/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-3"></div>
+                    </div>
+                    <div class="row my-3">
+                        <div class="col-9">
+                            <div class="row">
+                                <strong class="col-1 col-form-label">药性：</strong>
+                                <div class="col-11 d-flex">
+                                    <div class="align-self-center pe-4"
+                                         th:each="mdcProp : ${medicineDTO.properties}">
+                                        <label>
+                                            <input th:id="'query_' + ${mdcProp.kind}" class="form-check-input"
+                                                   type="checkbox"
+                                                   checked="checked"
+                                                   th:text="${mdcProp.kind.valueZhCn}">
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-2"></div>
+                        <div class="col-1">
+                            <button type="button" class="btn btn-primary" style="width: 100%;" onclick="query()">查询
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-3"></div>
+        </div>
+        <div class="row my-3">
+            <div class="col-12">
+                <div class="container-flex">
+                    <button type="button" class="btn btn-primary" onclick="openSubmitMedicineModal()">
+                        添加中药信息
+                    </button>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                            data-bs-target="#delete_medicine_modal">
+                        批量删除
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="row my-3">
+            <div class="col-9 overflow-auto">
+                <div class="container-fluid p-0" th:fragment="medicineTable" id="medicineTable">
+                    <table class="table table-striped table-hover align-middle text-nowrap">
+                        <thead>
+                        <tr class="table-primary">
+                            <th style="text-align: center; width: 50px;">
+                                #
+                            </th>
+                            <th style="text-align: center; width: 50px;">
+                                序号
+                            </th>
+                            <th style="text-align: center; width: 100px;">
+                                药名
+                            </th>
+                            <th style="text-align: center; width: 200px;">
+                                现代医学药理研究
+                            </th>
+                            <th style="text-align: center; width: 200px;">
+                                性味
+                            </th>
+                            <th style="text-align: center; width: 200px;">
+                                归经
+                            </th>
+                            <th style="text-align: center; width: 400px;">
+                                功效
+                            </th>
+                            <th style="text-align: center; width: 400px;">
+                                临床应用
+                            </th>
+                            <th style="text-align: center; width: 200px;">
+                                药性
+                            </th>
+                            <th style="text-align: center; width: 100px;">
+                                操作
+                            </th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="medicine, status: ${medicineTableDTO.medicines}">
+                            <td class="overflow-auto justify-content-center align-items-center text-center"
+                                style="max-width: 50px;">
+                                <label>
+                                    <input class="form-check-input" type="checkbox" th:id="${medicine.id}"
+                                           name="medicineCheckBox"
+                                           th:onclick="addToCalculation(this, [[${medicine}]])">
+                                </label>
+                            </td>
+                            <td class="overflow-auto justify-content-center align-items-center text-center"
+                                style="max-width: 50px;">
+                                <p style="margin: 0px;" th:text="${status.index + 1}"></p>
+                            </td>
+                            <td class="overflow-auto justify-content-center align-items-center text-center"
+                                style="max-width: 100px;">
+                                <p style="margin: 0px;" th:text="${medicine.name}"></p>
+                            </td>
+                            <td class="overflow-auto justify-content-center align-items-center text-center"
+                                style="max-width: 200px;">
+                                <p style="margin: 0px;" th:text="${medicine.mmpResearch}"></p>
+                            </td>
+                            <td class="overflow-auto justify-content-center align-items-center text-center"
+                                style="max-width: 200px;">
+                                <p style="margin: 0px;" th:text="${medicine.natureAndFlavor}"></p>
+                            </td>
+                            <td class="overflow-auto justify-content-center align-items-center text-center"
+                                style="max-width: 200px;">
+                                <p style="margin: 0px;" th:text="${medicine.channelTropism}"></p>
+                            </td>
+                            <td class="overflow-auto justify-content-center align-items-center text-center"
+                                style="max-width: 400px;">
+                                <p style="margin: 0px;" th:text="${medicine.efficacy}"></p>
+                            </td>
+                            <td class="overflow-auto justify-content-center align-items-center text-center"
+                                style="max-width: 400px;">
+                                <p style="margin: 0px;"
+                                   th:text="${medicine.clinicalApplication}"></p>
+                            </td>
+                            <td class="overflow-auto justify-content-center align-items-center text-center"
+                                style="max-width: 200px;">
+                                    <span class="badge bg-secondary" style="margin: 1px; font-size: small;"
+                                          th:each="medicineProp : ${medicine.properties}"
+                                          th:data-role="${medicineProp.kind} + ':' + ${medicineProp.level}"
+                                          th:text="${medicineProp.kind.valueZhCn} + '(' + ${medicineProp.level} + ')'"></span>
+                            </td>
+                            <td class="overflow-auto justify-content-center align-items-center text-center">
+                                <div class="d-flex justify-content-center">
+                                    <a title="编辑" style="cursor:pointer" onclick="openEditMedicineModal(this)">
+                                        <img style="height: 20px; width: 20px" src="/img/edit.png"
+                                             alt="编辑"/>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <div class="container-fluid p-0">
+                        <div class="container d-flex justify-content-center align-items-center">
+                            <ul class="pagination">
+                                <li th:class="${medicineTableDTO.pageNum} > 1 ? 'page-item' : 'page-item disabled'">
+                                    <p class="page-link" style="cursor: pointer"
+                                       th:onclick="refreshTable(1)">
+                                        <<</p>
+                                </li>
+                                <li th:class="${medicineTableDTO.pageNum} > 1 ? 'page-item' : 'page-item disabled'">
+                                    <p class="page-link" style="cursor: pointer"
+                                       th:onclick="refreshTable([[${medicineTableDTO.pageNum - 1}]])"><</p>
+                                </li>
+                                <li class="page-item" th:if="${medicineTableDTO.pageNum - 2} > 0">
+                                    <p class="page-link" style="cursor: pointer"
+                                       th:onclick="refreshTable([[${medicineTableDTO.pageNum - 2}]])"
+                                       th:text="${medicineTableDTO.pageNum - 2}"></p>
+                                </li>
+                                <li class="page-item" th:if="${medicineTableDTO.pageNum - 1} > 0">
+                                    <p class="page-link" style="cursor: pointer"
+                                       th:onclick="refreshTable([[${medicineTableDTO.pageNum - 1}]])"
+                                       th:text="${medicineTableDTO.pageNum - 1}"></p>
+                                </li>
+                                <li class="page-item active">
+                                    <p class="page-link" th:text="${medicineTableDTO.pageNum}"></p>
+                                </li>
+                                <li class="page-item"
+                                    th:if="${medicineTableDTO.pageNum + 1} <= ${medicineTableDTO.totalPage}">
+                                    <p class="page-link" style="cursor: pointer"
+                                       th:onclick="refreshTable([[${medicineTableDTO.pageNum + 1}]])"
+                                       th:text="${medicineTableDTO.pageNum + 1}"></p>
+                                </li>
+                                <li class="page-item"
+                                    th:if="${medicineTableDTO.pageNum + 2} <= ${medicineTableDTO.totalPage}">
+                                    <p class="page-link" style="cursor: pointer"
+                                       th:onclick="refreshTable([[${medicineTableDTO.pageNum + 2}]])"
+                                       th:text="${medicineTableDTO.pageNum + 2}"></p>
+                                </li>
+                                <li th:class="${medicineTableDTO.pageNum} < ${medicineTableDTO.totalPage} ? 'page-item' : 'page-item disabled'">
+                                    <p class="page-link" style="cursor: pointer"
+                                       th:onclick="refreshTable([[${medicineTableDTO.pageNum + 1}]])">></p>
+                                </li>
+                                <li th:class="${medicineTableDTO.pageNum} < ${medicineTableDTO.totalPage} ? 'page-item' : 'page-item disabled'">
+                                    <p class="page-link" style="cursor: pointer"
+                                       th:onclick="refreshTable([[${medicineTableDTO.totalPage}]])">>></p>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-3">
+                <div class="panel panel-default border rounded p-3">
+                    <div class="panel-heading">
+                        <h4 class="panel-title fw-bold text-center">药性计算面板</h4>
+                    </div>
+                    <div class="panel-body">
+                        <div class="container-fluid overflow-auto mb-3"
+                             style="max-height: 600px">
+                            <table class="table table-bordered border-dark table-striped table-hover align-middle text-nowrap"
+                                   id="calculationTable">
+                                <thead>
+                                <tr>
+                                    <th style="text-align: center; width: 50px; background-color: #EDE2C9;">
+                                        序号
+                                    </th>
+                                    <th style="text-align: center; background-color: #EDE2C9;">
+                                        药名
+                                    </th>
+                                    <th style="text-align: center; width: 50px; background-color: #EDE2C9;">
+                                        操作
+                                    </th>
+                                </tr>
+                                </thead>
+                                <tbody id="calculationTableBody"></tbody>
+                            </table>
+                        </div>
+                        <div class="container-fluid">
+                            <h6 class="fw-bold">药性总和：</h6>
+                            <table class="table table-bordered border-dark align-middle text-nowrap">
+                                <thead>
+                                <tr>
+                                    <th style="text-align: center; background-color: #8793B0; color: white;"
+                                        th:each="mdcProp : ${medicineDTO.properties}"
+                                        th:text="${mdcProp.kind.valueZhCn}"></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr>
+                                    <td style="text-align: center;"
+                                        th:each="mdcProp : ${medicineDTO.properties}"
+                                        th:id="'calculate_' + ${mdcProp.kind}">0
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-row-reverse">
+                        <button class="btn btn-primary m-1">
+                            添加药方
+                        </button>
+                        <button class="btn btn-primary m-1" onclick="clearCalculation()">
+                            清空
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="submit_medicine_modal">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <strong class="fas fa-user-edit me-2">
+                            添加中药信息
+                        </strong>
+                    </h5>
+                    <button type="button" class="btn-close" aria-label="Close"
+                            data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="submit_medicine_form" method="POST" th:action="@{/medicines}"
+                          th:object="${medicineDTO}" autocomplete="off">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    <strong>中药名：</strong>
+                                </label>
+                                <label>
+                                    <input type="text" class="form-control" placeholder="请输入..." required
+                                           minlength="1" th:field="*{name}">
+                                </label>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label class="form-label">
+                                <strong>性味：</strong>
+                            </label>
+                            <label>
+                                        <textarea class="form-control" rows="3" placeholder="请输入..."
+                                                  th:field="*{natureAndFlavor}"></textarea>
+                            </label>
+                        </div>
+                        <div class="row mb-3">
+                            <label class="form-label">
+                                <strong>归经：</strong>
+                            </label>
+                            <label>
+                                        <textarea class="form-control" rows="3" placeholder="请输入..."
+                                                  th:field="*{channelTropism}"></textarea>
+                            </label>
+                        </div>
+                        <div class="row mb-3">
+                            <label class="form-label">
+                                <strong>功效：</strong>
+                            </label>
+                            <label>
+                                        <textarea class="form-control" rows="3" placeholder="请输入..."
+                                                  th:field="*{efficacy}"></textarea>
+                            </label>
+                        </div>
+                        <div class="row mb-3">
+                            <label class="form-label">
+                                <strong>临床应用：</strong>
+                            </label>
+                            <label>
+                                <textarea class="form-control" rows="3" placeholder="请输入..." required minlength="1"
+                                          th:field="*{clinicalApplication}"></textarea>
+                            </label>
+                        </div>
+                        <div class="row mb-3">
+                            <label class="form-label">
+                                <strong>现代医学药理研究：</strong>
+                            </label>
+                            <label>
+                                <textarea class="form-control" rows="3" placeholder="请输入..." required minlength="1"
+                                          th:field="*{mmpResearch}"></textarea>
+                            </label>
+                        </div>
+                        <div class="row mb-3">
+                            <label class="form-label">
+                                <strong>药性：</strong>
+                            </label>
+                            <div class="col-md-6" th:each="mdcProp, status : *{properties}">
+                                <div style="float: left; width: 20%; text-align: left;"
+                                     th:text="${mdcProp.kind.valueZhCn}"></div>
+                                <div style="float: left; width: 60%;">
+                                    <label style="width: 100%">
+                                        <input th:id="${mdcProp.kind}"
+                                               th:field="*{properties[__${status.index}__].level}"
+                                               th:value="${mdcProp.level} != null ? ${mdcProp.level} : 0"
+                                               type="range"
+                                               class="form-range" min="0" max="10"
+                                               step="1"
+                                               th:onchange="updateMdcPropKindSpanValue(this.id, this.value)">
+                                    </label>
+                                </div>
+                                <span th:id="'span_' + ${mdcProp.kind}"
+                                      style="float: left; width: 15%; margin-left: 5%;"
+                                      th:text="${mdcProp.level} != null ? ${mdcProp.level} : 0"></span>
+                                <input type="hidden" th:field="*{properties[__${status.index}__].kind}"/>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                取消
+                            </button>
+                            <button type="submit" class="btn btn-primary" data-bs-dismiss="modal">确认</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="delete_medicine_modal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">永久删除中药</h4>
+                </div>
+                <div class="modal-body">
+                    <h6>确认要删除选中的中药吗？</h6>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <form th:action="@{/medicines}" th:method="DELETE" id="delete_medicines_form">
+                        <input type="hidden" id="deleteMedicines" name="ids">
+                        <button type="submit" class="btn btn-danger" data-bs-dismiss="modal">确认</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="toast-container" id="toastContainer"
+         style="position: fixed; top: 100px; right: 20px; z-index: 1055; min-width: 300px;"></div>
+</div>
+<!-- 底部 -->
+<footer>
+    <div th:replace="page_template :: footer"></div>
+</footer>
+</body>
+</html>

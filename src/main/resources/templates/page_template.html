@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>中医大脑</title>
+
+    <link rel="stylesheet" type="text/css" th:href="@{/css/bootstrap.min.css}"/>
+    <script type="text/javascript" th:src="@{/js/bootstrap.bundle.min.js}"></script>
+    <script type="text/javascript" th:src="@{/js/bootstrap.min.js}"></script>
+    <script type="text/javascript" th:src="@{/js/jquery.min.js}"></script>
+    <script></script>
+</head>
+<body>
+<!-- 顶部导航 -->
+<nav th:fragment="top_nav" class="navbar sticky-top navbar-light bg-light">
+    <div class="container-fluid">
+        <a class="navbar-brand border-0" href="/">
+            <img src="/img/logo.png" alt="Logo" width="30px" height="30px" class="align-text-center">
+            <strong>中医大脑</strong>
+        </a>
+        <ul class="nav justify-content-end">
+            <li class="nav-item">
+                <a class="nav-link" href="/" title="系统设置">
+                    <img style="height: 30px; width: 30px" src="/img/setting.png" alt="系统设置"/>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/" title="查看消息">
+                    <img style="height: 30px; width: 30px" src="/img/msg.png" alt="查看消息"/>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/" title="个人中心">
+                    <img style="height: 30px; width: 30px" src="/img/user.png" alt="个人中心"/>
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>
+<!-- 侧边导航 -->
+<div th:fragment="side_nav" class="d-flex flex-column p-3 bg-light border-top" style="width: 280px; flex-shrink:0;">
+    <ul class="nav nav-pills flex-column mb-auto">
+        <li class="nav-item">
+            <a href="/" th:class="${uri=='/' ? 'nav-link active' : 'nav-link link-dark'}">
+                <img class="bi me-2" width="16" height="16" src="/img/index.png" alt="主页"/>
+                主页
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="/medicines" th:class="${uri=='/medicines' ? 'nav-link active' : 'nav-link link-dark'}">
+                <img class="bi me-2" width="16" height="16" src="/img/medicines.png" alt="中药管理"/>
+                中药管理
+            </a>
+        </li>
+        <li>
+            <a href="/prescriptions" th:class="${uri=='/prescriptions' ? 'nav-link active' : 'nav-link link-dark'}">
+                <img class="bi me-2" width="16" height="16" src="/img/prescription.png" alt="药方查看"/>
+                药方查看
+            </a>
+        </li>
+        <li>
+            <a href="/llm" th:class="${uri=='/llm' ? 'nav-link active' : 'nav-link link-dark'}">
+                <img class="bi me-2" width="16" height="16" src="/img/llm.png" alt="中医智能体"/>
+                中医智能体
+            </a>
+        </li>
+    </ul>
+</div>
+<!-- 底部 -->
+<footer>
+    <div th:fragment="footer"
+         style="margin: auto; border-top: 0.1px solid #7f8c8d; padding-top: 20px; text-align: center; font-size: 0.8rem; color: #7f8c8d;">
+        Copyright (©) 2025 GuCheng Technologies Co., Ltd. All Rights Reserved.
+        <br/>
+        联系我们：<a href="/" style="padding-bottom: 2rem; color: #3498db; font-size: 0.9rem;">1234567890@qq.com</a>&nbsp;&nbsp;
+        电话：<a href="/" style="padding-bottom: 2rem; color: #3498db; font-size: 0.9rem;">123-456-7890</a>
+    </div>
+</footer>
+</body>
+</html>

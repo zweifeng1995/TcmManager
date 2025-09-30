@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>中医大脑</title>
+    <link rel="stylesheet" type="text/css" th:href="@{/css/bootstrap.min.css}"/>
+    <script type="text/javascript" th:src="@{/js/bootstrap.bundle.min.js}"></script>
+    <script type="text/javascript" th:src="@{/js/bootstrap.min.js}"></script>
+    <script type="text/javascript" th:src="@{/js/jquery.min.js}"></script>
+    <script></script>
+</head>
+
+<body>
+<!-- 顶部导航 -->
+<nav th:replace="page_template :: top_nav"></nav>
+<div class="d-flex">
+    <!-- 侧边导航 -->
+    <div th:replace="~{page_template :: side_nav(uri='/')}"></div>
+    <!-- 内容 -->
+    <div class="container">
+        <strong style="display: flex; justify-content: center; align-items: center; height: 100%;">暂未开放，敬请期待...</strong>
+    </div>
+</div>
+<!-- 底部 -->
+<footer>
+    <div th:replace="page_template :: footer"></div>
+</footer>
+</body>
+</html>
