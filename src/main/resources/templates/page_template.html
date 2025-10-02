@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>中医大脑</title>
+    <title>中医管理系统</title>
 
     <link rel="stylesheet" type="text/css" th:href="@{/css/bootstrap.min.css}"/>
     <script type="text/javascript" th:src="@{/js/bootstrap.bundle.min.js}"></script>
@@ -17,7 +17,7 @@
     <div class="container-fluid">
         <a class="navbar-brand border-0" href="/">
             <img src="/img/logo.png" alt="Logo" width="30px" height="30px" class="align-text-center">
-            <strong>中医大脑</strong>
+            <strong>中医管理系统</strong>
         </a>
         <ul class="nav justify-content-end">
             <li class="nav-item">
@@ -50,13 +50,13 @@
         <li class="nav-item">
             <a href="/medicines" th:class="${uri=='/medicines' ? 'nav-link active' : 'nav-link link-dark'}">
                 <img class="bi me-2" width="16" height="16" src="/img/medicines.png" alt="中药管理"/>
-                中药管理
+                药材库
             </a>
         </li>
         <li>
             <a href="/prescriptions" th:class="${uri=='/prescriptions' ? 'nav-link active' : 'nav-link link-dark'}">
                 <img class="bi me-2" width="16" height="16" src="/img/prescription.png" alt="药方查看"/>
-                药方查看
+                药方库
             </a>
         </li>
         <li>
@@ -71,10 +71,11 @@
 <footer>
     <div th:fragment="footer"
          style="margin: auto; border-top: 0.1px solid #7f8c8d; padding-top: 20px; text-align: center; font-size: 0.8rem; color: #7f8c8d;">
-        Copyright (©) 2025 GuCheng Technologies Co., Ltd. All Rights Reserved.
+        <!--        Copyright (©) 2025 GuCheng Technologies Co., Ltd. All Rights Reserved.-->
         <br/>
-        联系我们：<a href="/" style="padding-bottom: 2rem; color: #3498db; font-size: 0.9rem;">1234567890@qq.com</a>&nbsp;&nbsp;
-        电话：<a href="/" style="padding-bottom: 2rem; color: #3498db; font-size: 0.9rem;">123-456-7890</a>
+        <!--        联系我们：<a href="/" style="padding-bottom: 2rem; color: #3498db; font-size: 0.9rem;">1234567890@qq.com</a>&nbsp;&nbsp;-->
+        联系我：<a href="/" style="padding-bottom: 2rem; color: #3498db; font-size: 0.9rem;">505978299@qq.com</a>&nbsp;&nbsp;
+        电话：<a href="/" style="padding-bottom: 2rem; color: #3498db; font-size: 0.9rem;">138-231-25942</a>
     </div>
 </footer>
 </body>

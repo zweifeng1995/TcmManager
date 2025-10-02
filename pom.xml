@@ -8,12 +8,12 @@
         <version>2.7.18</version>
     </parent>
 
-    <groupId>com.gucheng.tcmbrain</groupId>
-    <artifactId>TCMBrain</artifactId>
+    <groupId>com.gucheng.tcmmanager</groupId>
+    <artifactId>TcmManager</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 
-    <name>TCMBrain</name>
-    <description>Traditional Chinese Medicine Brain</description>
+    <name>TcmManager</name>
+    <description>Traditional Chinese Medicine Management System</description>
 
     <properties>
         <java.version>11</java.version>
@@ -22,7 +22,7 @@
         <lombok.version>1.18.40</lombok.version>
         <h2.version>2.3.232</h2.version>
         <mysql.connector.version>8.0.33</mysql.connector.version>
-        <start-class>com.gucheng.tcmbrain.TcmBrainApplication</start-class>
+        <start-class>com.gucheng.tcmmanager.TcmManagerApplication</start-class>
     </properties>
 
     <dependencyManagement>
@@ -130,7 +130,7 @@
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-<!--            <scope>test</scope>-->
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

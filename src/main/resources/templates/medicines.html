@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>中医大脑</title>
+    <title>中医管理系统</title>
 
     <link rel="stylesheet" type="text/css" th:href="@{/css/bootstrap.min.css}"/>
     <script type="text/javascript" th:src="@{/js/bootstrap.bundle.min.js}"></script>
@@ -14,19 +14,20 @@
         let calculationMedicineList = [];
         let allEmpProperties = [[${medicineDTO.properties}]];
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const submit_medicine_form = document.getElementById('submit_medicine_form');
-            const delete_medicine_form = document.getElementById('delete_medicine_form');
+            const delete_medicines_form = document.getElementById('delete_medicines_form');
+            const submit_prescription_form = document.getElementById('submit_prescription_form');
 
-            submit_medicine_form.addEventListener('submit', function(event) {
+            submit_medicine_form.addEventListener('submit', function (event) {
                 event.preventDefault();
                 const formData = new FormData(this);
                 const method = submit_medicine_form.getAttribute('method');
                 let tips = "";
-                if (method == "POST") {
+                if (method === "POST") {
                     tips = "添加";
                 }
-                if (method == "PUT") {
+                if (method === "PUT") {
                     tips = "修改";
                 }
                 $.ajax({
@@ -36,18 +37,19 @@
                     processData: false,
                     contentType: false,
                     success: function (data) {
-                        showToast('success', '药品' + tips + '成功！', '操作成功');
+                        showToast('success', '药材' + tips + '成功！', '操作成功');
                         refreshTable();
                     },
-                    error: function(xhr, status, error) {
-                        showToast('error', '药品' + tips + '失败', '操作失败');
+                    error: function (xhr, status, error) {
+                        showToast('error', '药材' + tips + '失败', '操作失败');
                     },
-                    complete: function() {
+                    complete: function () {
+                        submit_medicine_form.reset();
                     }
                 })
             });
 
-            delete_medicines_form.addEventListener('submit', function(event) {
+            delete_medicines_form.addEventListener('submit', function (event) {
                 event.preventDefault();
                 const formData = new FormData(this);
                 $.ajax({
@@ -62,18 +64,42 @@
                         clearCalculation();
                         refreshTable();
                     },
-                    error: function(xhr, status, error) {
+                    error: function (xhr, status, error) {
                         delete_medicines_form.reset();
                         showToast('error', '删除药品失败！', '操作失败');
                     },
-                    complete: function() {
+                    complete: function () {
+                    }
+                })
+            });
+
+            submit_prescription_form.addEventListener('submit', function (event) {
+                event.preventDefault();
+                const formData = new FormData(this);
+                $.ajax({
+                    url: "/prescriptions",
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (data) {
+                        submit_prescription_form.reset();
+                        showToast('success', '药方添加成功！', '操作成功');
+                    },
+                    error: function (xhr, status, error) {
+                        submit_prescription_form.reset();
+                        showToast('error', '药方添加失败！', '操作失败');
+                    },
+                    complete: function () {
                     }
                 })
             });
         })
 
         function openSubmitMedicineModal() {
-            document.getElementById('name').disabled = false;
+            const name = document.getElementById('name');
+            name.readOnly = false;
+            document.getElementById('submit_medicine_modal_title').innerText = "添加药材信息";
             const submit_medicine_form = document.getElementById('submit_medicine_form');
             submit_medicine_form.reset();
             allEmpProperties.forEach((property) => {
@@ -88,8 +114,10 @@
         function openEditMedicineModal(button) {
             const row = button.closest('tr');
             const cells = row.getElementsByTagName('td');
-            document.getElementById('name').value = cells[2].getElementsByTagName('p')[0].innerText;
-            document.getElementById('name').disabled = true;
+            const name = document.getElementById('name');
+            name.readOnly = true;
+            document.getElementById('submit_medicine_modal_title').innerText = "修改药材信息";
+            name.value = cells[2].getElementsByTagName('p')[0].innerText;
             document.getElementById('mmpResearch').value = cells[3].getElementsByTagName('p')[0].innerText;
             document.getElementById('natureAndFlavor').value = cells[4].getElementsByTagName('p')[0].innerText;
             document.getElementById('channelTropism').value = cells[5].getElementsByTagName('p')[0].innerText;
@@ -121,6 +149,24 @@
             submit_medicine_modal.show();
         }
 
+        function openSubmitPrescriptionModal() {
+            if (calculationMedicineList.length === 0) {
+                showToast('error', '请至少选择一味药材才能保存新药方！', '操作失败');
+                return;
+            }
+            const submit_prescription_modal = new bootstrap.Modal(document.getElementById('submit_prescription_modal'));
+            submit_prescription_modal.show();
+            const prescriptionTableBody = document.getElementById("prescriptionTableBody")
+            prescriptionTableBody.innerHTML = calculationMedicineList.map((calculationMedicine, index) => `
+                <tr>
+                    <td style="text-align: center;">
+                        ${calculationMedicine.name}
+                        <input type="hidden" name="prescriptionMedicinesName[${index}]" value="${calculationMedicine.name}">
+                    </td>
+                </tr>
+            `).join("");
+        }
+
         function refreshCalculationTable() {
             let calculateMap = new Map();
             for (let index = 0; index < allEmpProperties.length; index++) {
@@ -138,7 +184,7 @@
                 calculate_kind.innerText = value;
             });
             let calculationTable = document.getElementById("calculationTableBody");
-            let newCalculationTableBody = calculationMedicineList.map((calculationMedicine, index) => `
+            calculationTable.innerHTML = calculationMedicineList.map((calculationMedicine, index) => `
                 <tr>
                     <td style="text-align: center;">${index + 1}</td>
                     <td style="text-align: center;">${calculationMedicine.name}</td>
@@ -149,11 +195,10 @@
                     </td>
                 </tr>
             `).join("");
-            calculationTable.innerHTML = newCalculationTableBody;
             let deleteMedicinesInput = document.getElementById("deleteMedicines");
             let query_ids = "";
             calculationMedicineList.map(medicine => {
-                if (query_ids == "") {
+                if (query_ids === "") {
                     query_ids += medicine.id;
                 } else {
                     query_ids += "," + medicine.id;
@@ -181,10 +226,10 @@
             toastContainer.insertAdjacentHTML('beforeend', toastHtml);
 
             let toastElement = document.getElementById(toastId);
-            let toast = new bootstrap.Toast(toastElement, { delay: 3000 });
+            let toast = new bootstrap.Toast(toastElement, {delay: 3000});
             toast.show();
 
-            toastElement.addEventListener('hidden.bs.toast', function() {
+            toastElement.addEventListener('hidden.bs.toast', function () {
                 toastElement.remove();
             });
         }
@@ -220,7 +265,7 @@
 
         function addToCalculation(checkbox, medicine) {
             if (calculationMedicineList.length >= 50) {
-                alert("1个药方最多添加50个中药！");
+                alert("1个药方最多添加50个药材！");
                 checkbox.checked = false;
                 return;
             }
@@ -280,7 +325,7 @@
                 success: function (data) {
                     $("#medicineTable").html(data);
                     let medicineCheckBoxList = document.getElementsByName('medicineCheckBox');
-                    Array.from(medicineCheckBoxList).forEach(function(checkbox) {
+                    Array.from(medicineCheckBoxList).forEach(function (checkbox) {
                         calculationMedicineList.forEach(item => {
                             if (item.id == checkbox.id) {
                                 checkbox.checked = true;
@@ -304,7 +349,7 @@
     <div class="d-flex flex-column p-3">
         <div class="row mt-3">
             <div class="col-9">
-                <h2 class="fw-bold text-center">中药列表</h2>
+                <h2 class="fw-bold text-center">药材列表</h2>
                 <div class="container-fluid rounded border border-1">
                     <div class="row my-3">
                         <div class="col-3 align-middle">
@@ -374,7 +419,7 @@
             <div class="col-12">
                 <div class="container-flex">
                     <button type="button" class="btn btn-primary" onclick="openSubmitMedicineModal()">
-                        添加中药信息
+                        添加药材信息
                     </button>
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal"
                             data-bs-target="#delete_medicine_modal">
@@ -396,7 +441,7 @@
                                 序号
                             </th>
                             <th style="text-align: center; width: 100px;">
-                                药名
+                                药材名
                             </th>
                             <th style="text-align: center; width: 200px;">
                                 现代医学药理研究
@@ -544,7 +589,7 @@
                                         序号
                                     </th>
                                     <th style="text-align: center; background-color: #EDE2C9;">
-                                        药名
+                                        药材名
                                     </th>
                                     <th style="text-align: center; width: 50px; background-color: #EDE2C9;">
                                         操作
@@ -576,8 +621,8 @@
                         </div>
                     </div>
                     <div class="d-flex flex-row-reverse">
-                        <button class="btn btn-primary m-1">
-                            添加药方
+                        <button class="btn btn-primary m-1" onclick="openSubmitPrescriptionModal()">
+                            保存为新药方
                         </button>
                         <button class="btn btn-primary m-1" onclick="clearCalculation()">
                             清空
@@ -592,24 +637,22 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <strong class="fas fa-user-edit me-2">
-                            添加中药信息
-                        </strong>
+                        <strong class="fas fa-user-edit me-2" id="submit_medicine_modal_title"></strong>
                     </h5>
                     <button type="button" class="btn-close" aria-label="Close"
                             data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <form id="submit_medicine_form" method="POST" th:action="@{/medicines}"
-                          th:object="${medicineDTO}" autocomplete="off">
+                <form id="submit_medicine_form" method="POST" th:action="@{/medicines}"
+                      th:object="${medicineDTO}" autocomplete="off">
+                    <div class="modal-body">
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">
-                                    <strong>中药名：</strong>
+                                    <strong>药材名：</strong>
                                 </label>
                                 <label>
                                     <input type="text" class="form-control" placeholder="请输入..." required
-                                           minlength="1" th:field="*{name}">
+                                           minlength="1" maxlength="32" th:field="*{name}">
                                 </label>
                             </div>
                         </div>
@@ -618,7 +661,7 @@
                                 <strong>性味：</strong>
                             </label>
                             <label>
-                                        <textarea class="form-control" rows="3" placeholder="请输入..."
+                                        <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64"
                                                   th:field="*{natureAndFlavor}"></textarea>
                             </label>
                         </div>
@@ -627,7 +670,7 @@
                                 <strong>归经：</strong>
                             </label>
                             <label>
-                                        <textarea class="form-control" rows="3" placeholder="请输入..."
+                                        <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64"
                                                   th:field="*{channelTropism}"></textarea>
                             </label>
                         </div>
@@ -636,7 +679,7 @@
                                 <strong>功效：</strong>
                             </label>
                             <label>
-                                        <textarea class="form-control" rows="3" placeholder="请输入..."
+                                        <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64"
                                                   th:field="*{efficacy}"></textarea>
                             </label>
                         </div>
@@ -646,6 +689,7 @@
                             </label>
                             <label>
                                 <textarea class="form-control" rows="3" placeholder="请输入..." required minlength="1"
+                                          maxlength="64"
                                           th:field="*{clinicalApplication}"></textarea>
                             </label>
                         </div>
@@ -655,6 +699,7 @@
                             </label>
                             <label>
                                 <textarea class="form-control" rows="3" placeholder="请输入..." required minlength="1"
+                                          maxlength="64"
                                           th:field="*{mmpResearch}"></textarea>
                             </label>
                         </div>
@@ -682,14 +727,14 @@
                                 <input type="hidden" th:field="*{properties[__${status.index}__].kind}"/>
                             </div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                取消
-                            </button>
-                            <button type="submit" class="btn btn-primary" data-bs-dismiss="modal">确认</button>
-                        </div>
-                    </form>
-                </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            取消
+                        </button>
+                        <button type="submit" class="btn btn-primary" data-bs-dismiss="modal">确认</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -697,10 +742,10 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title">永久删除中药</h4>
+                    <h4 class="modal-title">永久删除该药材</h4>
                 </div>
                 <div class="modal-body">
-                    <h6>确认要删除选中的中药吗？</h6>
+                    <h6>确认要删除选中的药材吗？</h6>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
@@ -709,6 +754,61 @@
                         <button type="submit" class="btn btn-danger" data-bs-dismiss="modal">确认</button>
                     </form>
                 </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="submit_prescription_modal">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <strong class="fas fa-user-edit me-2" id="submit_prescription_modal_title">
+                            药方详情
+                        </strong>
+                    </h5>
+                    <button type="button" class="btn-close" aria-label="Close"
+                            data-bs-dismiss="modal"></button>
+                </div>
+                <form id="submit_prescription_form" method="POST" th:action="@{/prescriptions}"
+                      th:object="${prescriptionDTO}" autocomplete="off">
+                    <div class="modal-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    <strong>药方名：</strong>
+                                </label>
+                                <label>
+                                    <input type="text" class="form-control" placeholder="请输入..." required
+                                           minlength="1" maxlength="32" th:field="*{prescriptionName}">
+                                </label>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label class="form-label">
+                                <strong>药方描述：</strong>
+                            </label>
+                            <label>
+                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64"
+                                          th:field="*{prescriptionDesc}"></textarea>
+                            </label>
+                        </div>
+                        <div>
+                            <label class="form-label">
+                                <strong>药材列表：</strong>
+                            </label>
+                            <table class="table table-bordered border-dark table-striped table-hover align-middle text-nowrap">
+                                <thead></thead>
+                                <tbody id="prescriptionTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            取消
+                        </button>
+                        <button type="submit" class="btn btn-primary" data-bs-dismiss="modal">保存</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
