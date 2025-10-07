@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="INFO" monitorInterval="30" strict="true">
+    <Properties>
+        <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</Property>
+        <Property name="LOG_PATH">${env:LOG_PATH:-./}</Property>
+        <Property name="APP_NAME">TcmManager</Property>
+    </Properties>
+
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+        </Console>
+
+        <RollingFile name="RollingFileApp"
+                     fileName="${LOG_PATH}/${APP_NAME}-run.log"
+                     filePattern="${LOG_PATH}/archive/${APP_NAME}-run-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="20 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="100">
+                <Delete basePath="${LOG_PATH}/archive" maxDepth="1">
+                    <IfFileName glob="${APP_NAME}-run-*.log.gz"/>
+                    <IfLastModified age="30d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+
+        <RollingFile name="RollingFileError"
+                     fileName="${LOG_PATH}/${APP_NAME}-error.log"
+                     filePattern="${LOG_PATH}/archive/${APP_NAME}-error-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="20 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="100">
+                <Delete basePath="${LOG_PATH}/archive" maxDepth="1">
+                    <IfFileName glob="${APP_NAME}-error-*.log.gz"/>
+                    <IfLastModified age="30d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <Logger name="org.springframework" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Logger name="org.mybatis" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <Logger name="com.gucheng.tcmmanager" level="INFO" additivity="false">
+            <AppenderRef ref="RollingFileApp"/>
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="RollingFileApp"/>
+            <AppenderRef ref="RollingFileError"/>
+        </Root>
+    </Loggers>
+</Configuration>

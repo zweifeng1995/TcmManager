@@ -21,14 +21,16 @@ import java.util.List;
 public interface MedicineRepo extends JpaRepository<MedicineEntity, String> {
     @Query(value = "SELECT m.* FROM medicine m" +
             " WHERE m.name LIKE %:name%" +
+            " AND (:first_category = '' OR m.first_category = :first_category)" +
+            " AND (:second_category = '' OR m.second_category = :second_category)" +
             " AND EXISTS (SELECT 1 FROM medicine_extend me WHERE me.medicine_id = m.id AND me.efficacy LIKE %:efficacy%)" +
-            " AND EXISTS (SELECT 1 FROM medicine_extend me WHERE me.medicine_id = m.id AND me.clinical_application LIKE %:clinical_application%)" +
-            " AND EXISTS (SELECT 1 FROM medicine_property mp WHERE mp.medicine_id = m.id AND mp.kind IN (:mdc_prop_kinds))",
+            " AND EXISTS (SELECT 1 FROM medicine_extend me WHERE me.medicine_id = m.id AND me.clinical_application LIKE %:clinical_application%)",
             nativeQuery = true)
     List<MedicineEntity> findByCondition(@Param("name") String name,
                                          @Param("efficacy") String efficacy,
                                          @Param("clinical_application") String clinicalApplication,
-                                         @Param("mdc_prop_kinds") List<Integer> mdcPropKindList);
+                                         @Param("first_category") String firstCategory,
+                                         @Param("second_category") String secondCategory);
 
     MedicineEntity findByName(@Param("name") String name);
 }

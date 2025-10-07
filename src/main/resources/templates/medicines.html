@@ -10,11 +10,35 @@
     <script type="text/javascript" th:src="@{/js/bootstrap.bundle.min.js}"></script>
     <script type="text/javascript" th:src="@{/js/bootstrap.min.js}"></script>
     <script type="text/javascript" th:src="@{/js/jquery.min.js}"></script>
+    <script type="text/javascript" th:src="@{/js/chart.js}"></script>
     <script th:inline="javascript">
         let calculationMedicineList = [];
         let allEmpProperties = [[${medicineDTO.properties}]];
+        let kindZhCnMap = [[${medicinePropertyKindMap}]];
+        let chart = null;
 
+        console.log(allEmpProperties);
         document.addEventListener('DOMContentLoaded', function () {
+            const ctx = document.getElementById('myChart');
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: allEmpProperties.flatMap(value => kindZhCnMap[value.kind]),
+                    datasets: [{
+                        label: '药性总和',
+                        data: new Array(allEmpProperties.length).fill(0),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
             const submit_medicine_form = document.getElementById('submit_medicine_form');
             const delete_medicines_form = document.getElementById('delete_medicines_form');
             const submit_prescription_form = document.getElementById('submit_prescription_form');
@@ -96,6 +120,56 @@
             });
         })
 
+        function updateSecondLevel() {
+            let medicineCategories = [[${medicineCategories}]];
+            const firstLevelSelect = document.getElementById('firstLevel');
+            const secondLevelSelect = document.getElementById('secondLevel');
+            const selectedValue = firstLevelSelect.value;
+
+            secondLevelSelect.innerHTML = '全选';
+
+            // 添加默认选项
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = '全选';
+            secondLevelSelect.appendChild(defaultOption);
+
+            // 添加二级分类选项
+            if (medicineCategories[selectedValue] != null && medicineCategories[selectedValue].length > 0) {
+                medicineCategories[selectedValue].forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item;
+                    option.textContent = item;
+                    secondLevelSelect.appendChild(option);
+                });
+            }
+        }
+
+        function updateSecondLevelInput() {
+            let medicineCategories = [[${medicineCategories}]];
+            const firstLevelSelectInput = document.getElementById('firstLevelInput');
+            const secondLevelSelectInput = document.getElementById('secondLevelInput');
+            const selectedValueInput = firstLevelSelectInput.value;
+
+            secondLevelSelectInput.innerHTML = '全选';
+
+            // 添加默认选项
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = '';
+            secondLevelSelectInput.appendChild(defaultOption);
+
+            // 添加二级分类选项
+            if (medicineCategories[selectedValueInput] != null && medicineCategories[selectedValueInput].length > 0) {
+                medicineCategories[selectedValueInput].forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item;
+                    option.textContent = item;
+                    secondLevelSelectInput.appendChild(option);
+                });
+            }
+        }
+
         function openSubmitMedicineModal() {
             const name = document.getElementById('name');
             name.readOnly = false;
@@ -118,13 +192,16 @@
             name.readOnly = true;
             document.getElementById('submit_medicine_modal_title').innerText = "修改药材信息";
             name.value = cells[2].getElementsByTagName('p')[0].innerText;
-            document.getElementById('mmpResearch').value = cells[3].getElementsByTagName('p')[0].innerText;
-            document.getElementById('natureAndFlavor').value = cells[4].getElementsByTagName('p')[0].innerText;
-            document.getElementById('channelTropism').value = cells[5].getElementsByTagName('p')[0].innerText;
-            document.getElementById('efficacy').value = cells[6].getElementsByTagName('p')[0].innerText;
-            document.getElementById('clinicalApplication').value = cells[7].getElementsByTagName('p')[0].innerText;
+            document.getElementById('firstLevelInput').value = cells[3].getElementsByTagName('p')[0].innerText;
+            updateSecondLevelInput();
+            document.getElementById('secondLevelInput').value = cells[4].getElementsByTagName('p')[0].innerText;
+            document.getElementById('mmpResearch').value = cells[5].getElementsByTagName('p')[0].innerText;
+            document.getElementById('natureAndFlavor').value = cells[6].getElementsByTagName('p')[0].innerText;
+            document.getElementById('channelTropism').value = cells[7].getElementsByTagName('p')[0].innerText;
+            document.getElementById('efficacy').value = cells[8].getElementsByTagName('p')[0].innerText;
+            document.getElementById('clinicalApplication').value = cells[9].getElementsByTagName('p')[0].innerText;
 
-            const raw_kind_show = cells[8].getElementsByTagName('span');
+            const raw_kind_show = cells[10].getElementsByTagName('span');
             let kind_show_map = new Map();
             Array.from(raw_kind_show).forEach((kind) => {
                 kind_key_value = kind.dataset.role.split(":");
@@ -179,10 +256,16 @@
                     calculateMap.set(properties[jIndex].kind, value + properties[jIndex].level);
                 }
             }
+            let labelsList = []
+            let dataList = []
             calculateMap.forEach((value, key) => {
-                let calculate_kind = document.getElementById("calculate_" + key);
-                calculate_kind.innerText = value;
+                labelsList.push(key);
+                dataList.push(value);
             });
+
+            chart.data.datasets[0].data = dataList;
+            chart.update();
+
             let calculationTable = document.getElementById("calculationTableBody");
             calculationTable.innerHTML = calculationMedicineList.map((calculationMedicine, index) => `
                 <tr>
@@ -292,6 +375,8 @@
             let query_medicine_name = document.getElementById("query_medicine_name");
             let query_efficacy = document.getElementById("query_efficacy");
             let query_clinical_application = document.getElementById("query_clinical_application");
+            let first_category = document.getElementById("firstLevel");
+            let second_category = document.getElementById("secondLevel");
 
             let queryKinds = "";
             let properties = [[${medicineDTO.properties}]];
@@ -316,8 +401,11 @@
             if (query_clinical_application != null && query_clinical_application.value != null && query_clinical_application.value != "") {
                 queryString += "&clinical_application=" + query_clinical_application.value;
             }
-            if (queryKinds != "") {
-                queryString += "&mdc_prop_kinds=" + queryKinds;
+            if (first_category != null && first_category.value != null && first_category.value != "") {
+                queryString += "&first_category=" + first_category.value;
+            }
+            if (second_category != null && second_category.value != null && second_category.value != "") {
+                queryString += "&second_category=" + second_category.value;
             }
             $.ajax({
                 url: "/refreshTable" + queryString,
@@ -391,17 +479,22 @@
                     <div class="row my-3">
                         <div class="col-9">
                             <div class="row">
-                                <strong class="col-1 col-form-label">药性：</strong>
-                                <div class="col-11 d-flex">
-                                    <div class="align-self-center pe-4"
-                                         th:each="mdcProp : ${medicineDTO.properties}">
-                                        <label>
-                                            <input th:id="'query_' + ${mdcProp.kind}" class="form-check-input"
-                                                   type="checkbox"
-                                                   checked="checked"
-                                                   th:text="${mdcProp.kind.valueZhCn}">
-                                        </label>
-                                    </div>
+                                <strong class="col-1 col-form-label">一级分类：</strong>
+                                <div class="col-5 d-flex">
+                                    <select id="firstLevel" class="form-select" aria-label="一级分类"
+                                            onchange="updateSecondLevel()">
+                                        <option selected value="">全选</option>
+                                        <option th:each="category : ${medicineCategories.keySet()}"
+                                                th:value="${category}"
+                                                th:text="${category}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <strong class="col-1 col-form-label">二级分类：</strong>
+                                <div class="col-5 d-flex">
+                                    <select id="secondLevel" class="form-select" aria-label="二级分类">
+                                        <option selected value="">全选</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -443,6 +536,12 @@
                             <th style="text-align: center; width: 100px;">
                                 药材名
                             </th>
+                            <th style="text-align: center; width: 100px;">
+                                一级分类
+                            </th>
+                            <th style="text-align: center; width: 100px;">
+                                二级分类
+                            </th>
                             <th style="text-align: center; width: 200px;">
                                 现代医学药理研究
                             </th>
@@ -478,31 +577,39 @@
                             </td>
                             <td class="overflow-auto justify-content-center align-items-center text-center"
                                 style="max-width: 50px;">
-                                <p style="margin: 0px;" th:text="${status.index + 1}"></p>
+                                <p style="margin: 0;" th:text="${status.index + 1}"></p>
                             </td>
                             <td class="overflow-auto justify-content-center align-items-center text-center"
                                 style="max-width: 100px;">
-                                <p style="margin: 0px;" th:text="${medicine.name}"></p>
+                                <p style="margin: 0;" th:text="${medicine.name}"></p>
+                            </td>
+                            <td class="overflow-auto justify-content-center align-items-center text-center"
+                                style="max-width: 100px;">
+                                <p style="margin: 0;" th:text="${medicine.firstCategory}"></p>
+                            </td>
+                            <td class="overflow-auto justify-content-center align-items-center text-center"
+                                style="max-width: 150px;">
+                                <p style="margin: 0;" th:text="${medicine.secondCategory}"></p>
                             </td>
                             <td class="overflow-auto justify-content-center align-items-center text-center"
                                 style="max-width: 200px;">
-                                <p style="margin: 0px;" th:text="${medicine.mmpResearch}"></p>
+                                <p style="margin: 0;" th:text="${medicine.mmpResearch}"></p>
                             </td>
                             <td class="overflow-auto justify-content-center align-items-center text-center"
                                 style="max-width: 200px;">
-                                <p style="margin: 0px;" th:text="${medicine.natureAndFlavor}"></p>
+                                <p style="margin: 0;" th:text="${medicine.natureAndFlavor}"></p>
                             </td>
                             <td class="overflow-auto justify-content-center align-items-center text-center"
                                 style="max-width: 200px;">
-                                <p style="margin: 0px;" th:text="${medicine.channelTropism}"></p>
+                                <p style="margin: 0;" th:text="${medicine.channelTropism}"></p>
                             </td>
                             <td class="overflow-auto justify-content-center align-items-center text-center"
                                 style="max-width: 400px;">
-                                <p style="margin: 0px;" th:text="${medicine.efficacy}"></p>
+                                <p style="margin: 0;" th:text="${medicine.efficacy}"></p>
                             </td>
                             <td class="overflow-auto justify-content-center align-items-center text-center"
                                 style="max-width: 400px;">
-                                <p style="margin: 0px;"
+                                <p style="margin: 0;"
                                    th:text="${medicine.clinicalApplication}"></p>
                             </td>
                             <td class="overflow-auto justify-content-center align-items-center text-center"
@@ -599,25 +706,8 @@
                                 <tbody id="calculationTableBody"></tbody>
                             </table>
                         </div>
-                        <div class="container-fluid">
-                            <h6 class="fw-bold">药性总和：</h6>
-                            <table class="table table-bordered border-dark align-middle text-nowrap">
-                                <thead>
-                                <tr>
-                                    <th style="text-align: center; background-color: #8793B0; color: white;"
-                                        th:each="mdcProp : ${medicineDTO.properties}"
-                                        th:text="${mdcProp.kind.valueZhCn}"></th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <tr>
-                                    <td style="text-align: center;"
-                                        th:each="mdcProp : ${medicineDTO.properties}"
-                                        th:id="'calculate_' + ${mdcProp.kind}">0
-                                    </td>
-                                </tr>
-                                </tbody>
-                            </table>
+                        <div>
+                            <canvas id="myChart"></canvas>
                         </div>
                     </div>
                     <div class="d-flex flex-row-reverse">
@@ -651,9 +741,28 @@
                                     <strong>药材名：</strong>
                                 </label>
                                 <label>
-                                    <input type="text" class="form-control" placeholder="请输入..." required
-                                           minlength="1" maxlength="32" th:field="*{name}">
+                                    <input type="text" class="form-control" placeholder="请输入..." th:field="*{name}">
                                 </label>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <strong class="col-md-2 col-form-label">一级分类：</strong>
+                            <div class="col-md-4">
+                                <select id="firstLevelInput" class="form-select" aria-label="一级分类"
+                                        onchange="updateSecondLevelInput()" th:field="*{firstCategory}">
+                                    <option selected value=""></option>
+                                    <option th:each="category : ${medicineCategories.keySet()}"
+                                            th:value="${category}"
+                                            th:text="${category}">
+                                    </option>
+                                </select>
+                            </div>
+                            <strong class="col-md-2 col-form-label">二级分类：</strong>
+                            <div class="col-md-4">
+                                <select id="secondLevelInput" class="form-select" aria-label="二级分类"
+                                        th:field="*{secondCategory}">
+                                    <option selected value=""></option>
+                                </select>
                             </div>
                         </div>
                         <div class="row mb-3">
@@ -661,8 +770,8 @@
                                 <strong>性味：</strong>
                             </label>
                             <label>
-                                        <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64"
-                                                  th:field="*{natureAndFlavor}"></textarea>
+                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64"
+                                          th:field="*{natureAndFlavor}"></textarea>
                             </label>
                         </div>
                         <div class="row mb-3">
@@ -670,8 +779,8 @@
                                 <strong>归经：</strong>
                             </label>
                             <label>
-                                        <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64"
-                                                  th:field="*{channelTropism}"></textarea>
+                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64"
+                                          th:field="*{channelTropism}"></textarea>
                             </label>
                         </div>
                         <div class="row mb-3">
@@ -679,8 +788,8 @@
                                 <strong>功效：</strong>
                             </label>
                             <label>
-                                        <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64"
-                                                  th:field="*{efficacy}"></textarea>
+                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64"
+                                          th:field="*{efficacy}"></textarea>
                             </label>
                         </div>
                         <div class="row mb-3">
@@ -688,8 +797,7 @@
                                 <strong>临床应用：</strong>
                             </label>
                             <label>
-                                <textarea class="form-control" rows="3" placeholder="请输入..." required minlength="1"
-                                          maxlength="64"
+                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64"
                                           th:field="*{clinicalApplication}"></textarea>
                             </label>
                         </div>
@@ -698,8 +806,7 @@
                                 <strong>现代医学药理研究：</strong>
                             </label>
                             <label>
-                                <textarea class="form-control" rows="3" placeholder="请输入..." required minlength="1"
-                                          maxlength="64"
+                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64"
                                           th:field="*{mmpResearch}"></textarea>
                             </label>
                         </div>

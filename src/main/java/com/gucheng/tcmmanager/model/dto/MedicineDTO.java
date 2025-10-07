@@ -25,6 +25,12 @@ public class MedicineDTO {
     @JsonProperty("name")
     private String name; // 药名
 
+    @JsonProperty("first_category")
+    private String firstCategory; // 一级分类
+
+    @JsonProperty("second_category")
+    private String secondCategory; // 二级分类
+
     @JsonProperty("mmp_research")
     private String mmpResearch; // 现代医学药理研究
 

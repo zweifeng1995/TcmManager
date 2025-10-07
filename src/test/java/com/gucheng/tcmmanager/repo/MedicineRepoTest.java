@@ -65,8 +65,8 @@ public class MedicineRepoTest {
         log.info("medicineRepo.findAll(): {}", medicineRepo.findAll());
         Assertions.assertEquals(2, medicineRepo.findAll().size());
 
-        log.info("medicineRepo.findByCondition(\"\", \"\", \"\"): {}", medicineRepo.findByCondition("", "", "", new ArrayList<>()));
-        Assertions.assertEquals(0, medicineRepo.findByCondition("", "", "", new ArrayList<>()).size());
+        log.info("medicineRepo.findByCondition(\"\", \"\", \"\"): {}", medicineRepo.findByCondition("", "", "", "", ""));
+        Assertions.assertEquals(2, medicineRepo.findByCondition("", "", "", "", "").size());
     }
 
     private void generateData(String name) {
@@ -94,6 +94,8 @@ public class MedicineRepoTest {
         medicinePropertyEntities.add(medicinePropertyEntity2);
 
         medicineEntity.setName(name);
+        medicineEntity.setFirstCategory("firstCategory");
+        medicineEntity.setSecondCategory("secondCategory");
         medicineEntity.setMmpResearch("mmpResearch");
         medicineEntity.setMedicineExtendEntity(medicineExtendEntity);
         medicineEntity.setProperties(medicinePropertyEntities);

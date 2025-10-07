@@ -30,6 +30,12 @@ public class MedicineEntity {
     @Column(name = "name", nullable = false, unique = true, length = 32)
     private String name; // 药名
 
+    @Column(name = "first_category", nullable = false, length = 16)
+    private String firstCategory; // 一级分类
+
+    @Column(name = "second_category", nullable = false, length = 16)
+    private String secondCategory; // 二级分类
+
     @Column(name = "mmp_research", nullable = false, length = 64)
     private String mmpResearch; // 现代医学药理研究
 

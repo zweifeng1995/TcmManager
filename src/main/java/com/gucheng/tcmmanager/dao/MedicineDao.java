@@ -68,6 +68,8 @@ public class MedicineDao {
 
         medicineEntity.setName(medicineDTO.getName());
         medicineEntity.setMmpResearch(medicineDTO.getMmpResearch());
+        medicineEntity.setFirstCategory(medicineDTO.getFirstCategory());
+        medicineEntity.setSecondCategory(medicineDTO.getSecondCategory());
         medicineEntity.setMedicineExtendEntity(medicineExtendEntity);
         if (!medicinePropertyEntities.isEmpty()) {
             medicineEntity.setProperties(medicinePropertyEntities);
@@ -122,7 +124,7 @@ public class MedicineDao {
         return medicineRepo.findAll();
     }
 
-    public List<MedicineEntity> findByCondition(String name, String efficacy, String clinicalApplication, List<Integer> mdcPropKindList) {
-        return medicineRepo.findByCondition(name, efficacy, clinicalApplication, mdcPropKindList);
+    public List<MedicineEntity> findByCondition(String name, String efficacy, String clinicalApplication,String firstCategory, String secondCategory) {
+        return medicineRepo.findByCondition(name, efficacy, clinicalApplication,firstCategory, secondCategory);
     }
 }

@@ -1,10 +1,12 @@
 CREATE TABLE IF NOT EXISTS medicine
 (
-    id           VARCHAR(16)                         NOT NULL UNIQUE,
-    name         VARCHAR(32)                         NOT NULL UNIQUE,
-    mmp_research VARCHAR(64)                         NOT NULL,
-    created_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    id              VARCHAR(16)                         NOT NULL UNIQUE,
+    name            VARCHAR(32)                         NOT NULL UNIQUE,
+    first_category  VARCHAR(16)                         NOT NULL,
+    second_category VARCHAR(16)                         NOT NULL,
+    mmp_research    VARCHAR(64)                         NOT NULL,
+    created_time    TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_time    TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     PRIMARY KEY (id)
 );
 CREATE TABLE IF NOT EXISTS medicine_extend

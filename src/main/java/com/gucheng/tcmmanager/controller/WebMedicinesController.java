@@ -3,6 +3,7 @@
 package com.gucheng.tcmmanager.controller;
 
 
+import com.gucheng.tcmmanager.config.MedicineCategoryConfig;
 import com.gucheng.tcmmanager.dao.MedicineDao;
 import com.gucheng.tcmmanager.model.dto.*;
 import com.gucheng.tcmmanager.model.entity.MedicineEntity;
@@ -12,17 +13,18 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Slf4j
 @Controller
 public class WebMedicinesController {
     private final MedicineDao medicineDao;
+    private final MedicineCategoryConfig medicineCategoryConfig;
 
     @Autowired
-    public WebMedicinesController(MedicineDao medicineDao) {
+    public WebMedicinesController(MedicineDao medicineDao, MedicineCategoryConfig medicineCategoryConfig) {
         this.medicineDao = medicineDao;
+        this.medicineCategoryConfig = medicineCategoryConfig;
     }
 
     @GetMapping("/medicines")
@@ -31,8 +33,13 @@ public class WebMedicinesController {
                             @RequestParam(value = "pageSize", defaultValue = "20") int pageSize) {
         List<MedicineEntity> medicineEntities = medicineDao.findAll();
         MedicineTableDTO medicineTableDTO = query(pageNum, pageSize, medicineEntities);
+
+        Map<String, String> medicinePropertyKindMap = new HashMap<>();
+        Arrays.stream(MdcPropKind.values()).forEach(value -> medicinePropertyKindMap.put(value.name(), value.getValueZhCn()));
         model.addAttribute("medicineTableDTO", medicineTableDTO); // 用于展示
-        model.addAttribute("prescriptionDTO", new PrescriptionDTO()); // 用于展示
+        model.addAttribute("medicineCategories", medicineCategoryConfig.getCategoriesMap()); // 用于展示
+        model.addAttribute("medicinePropertyKindMap", medicinePropertyKindMap); // 用于展示
+        model.addAttribute("prescriptionDTO", new PrescriptionDTO()); // 用于添加
         model.addAttribute("medicineDTO", new MedicineDTO()); // 用于添加
         return "medicines";
     }
@@ -41,6 +48,12 @@ public class WebMedicinesController {
     public String submitMedicine(Model model, @ModelAttribute MedicineDTO medicineDTO) {
         if (medicineDTO.getProperties().stream().noneMatch(property -> property.getLevel() > 0)) {
             throw new RuntimeException("药性不能为空！");
+        }
+        if (medicineDTO.getFirstCategory() == null || medicineDTO.getFirstCategory().isEmpty()) {
+            throw new RuntimeException("一级分类不能为空！");
+        }
+        if (medicineDTO.getSecondCategory() == null || medicineDTO.getSecondCategory().isEmpty()) {
+            throw new RuntimeException("二级分类不能为空！");
         }
         log.info("medicineDTO: {}", medicineDTO);
         medicineDao.saveMedicine(medicineDTO);
@@ -74,20 +87,12 @@ public class WebMedicinesController {
                                @RequestParam(value = "name", required = false, defaultValue = "") String name,
                                @RequestParam(value = "efficacy", required = false, defaultValue = "") String efficacy,
                                @RequestParam(value = "clinical_application", required = false, defaultValue = "") String clinicalApplication,
-                               @RequestParam(value = "mdc_prop_kinds", required = false, defaultValue = "") String mdcPropKinds,
+                               @RequestParam(value = "first_category", required = false, defaultValue = "") String firstCategory,
+                               @RequestParam(value = "second_category", required = false, defaultValue = "") String secondCategory,
                                @RequestParam(value = "pageNum", defaultValue = "1") int pageNum,
                                @RequestParam(value = "pageSize", defaultValue = "20") int pageSize) {
-        String[] mdcPropKindsArr = mdcPropKinds.split(",");
-        List<Integer> mdcPropKindList = new ArrayList<>();
-        try {
-            for (String mdcPropKindStr : mdcPropKindsArr) {
-                mdcPropKindList.add(MdcPropKind.valueOf(mdcPropKindStr).ordinal());
-            }
-            log.info("mdcPropKindList: {}", mdcPropKindList);
-        } catch (Exception e) {
 
-        }
-        List<MedicineEntity> medicineEntities = medicineDao.findByCondition(name, efficacy, clinicalApplication, mdcPropKindList);
+        List<MedicineEntity> medicineEntities = medicineDao.findByCondition(name, efficacy, clinicalApplication, firstCategory, secondCategory);
 
         MedicineTableDTO medicineTableDTO = query(pageNum, pageSize, medicineEntities);
         model.addAttribute("medicineTableDTO", medicineTableDTO); // 用于展示
@@ -108,6 +113,8 @@ public class WebMedicinesController {
             }
             medicineDTO.setId(entity.getId());
             medicineDTO.setName(entity.getName());
+            medicineDTO.setFirstCategory(entity.getFirstCategory());
+            medicineDTO.setSecondCategory(entity.getSecondCategory());
             medicineDTO.setMmpResearch(entity.getMmpResearch());
             medicineDTO.setNatureAndFlavor(entity.getMedicineExtendEntity().getNatureAndFlavor());
             medicineDTO.setChannelTropism(entity.getMedicineExtendEntity().getChannelTropism());
