@@ -17,7 +17,6 @@
         let kindZhCnMap = [[${medicinePropertyKindMap}]];
         let chart = null;
 
-        console.log(allEmpProperties);
         document.addEventListener('DOMContentLoaded', function () {
             const ctx = document.getElementById('myChart');
             chart = new Chart(ctx, {
@@ -54,6 +53,7 @@
                 if (method === "PUT") {
                     tips = "修改";
                 }
+                let errorMsg = "";
                 $.ajax({
                     url: "/medicines",
                     type: method,
@@ -65,7 +65,10 @@
                         refreshTable();
                     },
                     error: function (xhr, status, error) {
-                        showToast('error', '药材' + tips + '失败', '操作失败');
+                        if (xhr != null && xhr.responseJSON != null && xhr.responseJSON.message != null) {
+                            errorMsg = xhr.responseJSON.message;
+                        }
+                        showToast('error', tips + '药材失败！\n' + errorMsg, '操作失败!');
                     },
                     complete: function () {
                         submit_medicine_form.reset();
@@ -76,6 +79,7 @@
             delete_medicines_form.addEventListener('submit', function (event) {
                 event.preventDefault();
                 const formData = new FormData(this);
+                errorMsg = "";
                 $.ajax({
                     url: "/medicines",
                     type: 'DELETE',
@@ -90,7 +94,10 @@
                     },
                     error: function (xhr, status, error) {
                         delete_medicines_form.reset();
-                        showToast('error', '删除药品失败！', '操作失败');
+                        if (xhr != null && xhr.responseJSON != null && xhr.responseJSON.message != null) {
+                            errorMsg = xhr.responseJSON.message;
+                        }
+                        showToast('error', '删除药品失败！\n' + errorMsg, '操作失败!');
                     },
                     complete: function () {
                     }
@@ -100,6 +107,7 @@
             submit_prescription_form.addEventListener('submit', function (event) {
                 event.preventDefault();
                 const formData = new FormData(this);
+                errorMsg = "";
                 $.ajax({
                     url: "/prescriptions",
                     type: 'POST',
@@ -112,7 +120,10 @@
                     },
                     error: function (xhr, status, error) {
                         submit_prescription_form.reset();
-                        showToast('error', '药方添加失败！', '操作失败');
+                        if (xhr != null && xhr.responseJSON != null && xhr.responseJSON.message != null) {
+                            errorMsg = xhr.responseJSON.message;
+                        }
+                        showToast('error', '药方添加失败！\n' + errorMsg, '操作失败!');
                     },
                     complete: function () {
                     }

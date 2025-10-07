@@ -82,6 +82,8 @@ public class MedicineDao {
     public void editMedicine(MedicineDTO medicineDTO) {
         MedicineEntity medicineEntity = medicineRepo.findByName((medicineDTO.getName()));
         medicineEntity.setMmpResearch(medicineDTO.getMmpResearch());
+        medicineEntity.setFirstCategory(medicineDTO.getFirstCategory());
+        medicineEntity.setSecondCategory(medicineDTO.getSecondCategory());
 
         medicineExtendRepo.findByMedicineEntityId(medicineEntity.getId()).ifPresent(extend -> {
             extend.setNatureAndFlavor(medicineDTO.getNatureAndFlavor());
