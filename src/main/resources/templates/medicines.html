@@ -283,6 +283,30 @@
                     <td style="text-align: center;">${index + 1}</td>
                     <td style="text-align: center;">${calculationMedicine.name}</td>
                     <td style="text-align: center;">
+                        <div class="input-group">
+                            <input type="number"
+                                   class="form-control"
+                                   id="weight"
+                                   step="0.01"
+                                   min="0.01"
+                                   value="1"
+                                   required>
+                            <span class="input-group-text">g</span>
+                        </div>
+                    </td>
+                    <td style="text-align: center;">
+                        <div class="input-group">
+                            <input type="number"
+                                   class="form-control"
+                                   id="coefficient"
+                                   step="0.01"
+                                   min="0"
+                                   max="10"
+                                   value="1"
+                                   required>
+                        </div>
+                    </td>
+                    <td style="text-align: center;">
                         <button type="submit" class="p-0 border-0 bg-transparent" onclick="deleteFromCalculation(this)" value="${calculationMedicine.id}">
                             <img style="height: 20px; width: 20px" src="/img/subtract.png" alt="删除"/>
                         </button>
@@ -703,13 +727,19 @@
                                    id="calculationTable">
                                 <thead>
                                 <tr>
-                                    <th style="text-align: center; width: 50px; background-color: #EDE2C9;">
+                                    <th style="text-align: center; vertical-align: middle; min-width: 50px; background-color: #EDE2C9;">
                                         序号
                                     </th>
-                                    <th style="text-align: center; background-color: #EDE2C9;">
+                                    <th style="text-align: center; vertical-align: middle; min-width: 150px; background-color: #EDE2C9;">
                                         药材名
                                     </th>
-                                    <th style="text-align: center; width: 50px; background-color: #EDE2C9;">
+                                    <th style="text-align: center; vertical-align: middle; min-width: 100px;background-color: #EDE2C9;">
+                                        克数
+                                    </th>
+                                    <th style="text-align: center; vertical-align: middle; min-width: 80px;background-color: #EDE2C9;">
+                                        权重<br/>(1-10之间)
+                                    </th>
+                                    <th style="text-align: center; vertical-align: middle; min-width: 50px; background-color: #EDE2C9;">
                                         操作
                                     </th>
                                 </tr>
