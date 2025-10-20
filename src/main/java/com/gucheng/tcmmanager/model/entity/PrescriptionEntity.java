@@ -43,17 +43,6 @@ public class PrescriptionEntity {
     @Column(name = "updated_time", nullable = false)
     private Timestamp updatedTime = new Timestamp(System.currentTimeMillis()); // 更新时间
 
-    @ManyToMany
-    @JoinTable(
-            name = "prescription_medicine", // 中间表名称
-            joinColumns = @JoinColumn(name = "prescription_id"), // 当前实体在中间表的外键
-            inverseJoinColumns = @JoinColumn(name = "medicine_id") // 关联实体在中间表的外键
-    )
-    private List<MedicineEntity> medicines; // 中药信息
-
-    public PrescriptionEntity(PrescriptionDTO prescriptionDTO, List<MedicineEntity> medicineEntities) {
-        this.name = prescriptionDTO.getPrescriptionName();
-        this.description = prescriptionDTO.getPrescriptionDesc();
-        this.medicines = medicineEntities;
-    }
+    @OneToMany(mappedBy = "prescriptionEntity",cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PrescriptionMdcEntity> medicines; // 中药信息
 }

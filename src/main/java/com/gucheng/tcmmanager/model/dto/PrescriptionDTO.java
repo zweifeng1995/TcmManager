@@ -18,7 +18,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 public class PrescriptionDTO {
-    @JsonProperty("prescriptionId")
+    @JsonProperty("prescription_id")
     private String prescriptionId; // ID
 
     @JsonProperty("prescription_name")
@@ -27,11 +27,11 @@ public class PrescriptionDTO {
     @JsonProperty("prescription_desc")
     private String prescriptionDesc; // 药方描述
 
-    @JsonProperty("prescription_medicines_name")
-    private List<String> prescriptionMedicinesName; // 药方描述
+    @JsonProperty("prescription_medicines")
+    private List<PrescriptionMdcDTO> prescriptionMedicines; // 药材列表
 
     @JsonProperty("prescription_mdc_prop_sum")
-    private List<MedicinePropDTO> prescriptionMdcPropSum; // 药性总和
+    private List<PrescriptionMdcPropDTO> prescriptionMdcPropSum; // 药性总和
 
     @JsonProperty("prescription_created_time")
     private String prescriptionCreatedTime; // 药方创建时间

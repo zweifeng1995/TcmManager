@@ -159,9 +159,10 @@
                         <h6 class="mt-3 border-bottom pb-1">组成药材:</h6>
                         <ul class="list-group list-group-flush herb-list">
                             <li class="list-group-item d-flex"
-                                th:each="medicineName, status: ${prescriptionDTO.getPrescriptionMedicinesName()}">
+                                th:each="medicine, status: ${prescriptionDTO.getPrescriptionMedicines()}">
                                 <img style="height: 24px; width: 24px" src="/img/medicine.png"/>
-                                <span th:text="${medicineName}"></span>
+                                <span th:text="${medicine.name}"></span>
+                                <span th:text="${', ' + medicine.gram + ' 克'}"></span>
                             </li>
                         </ul>
                         <table class="table table-bordered border-dark align-middle text-nowrap mt-3 mb-0">

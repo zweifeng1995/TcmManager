@@ -4,10 +4,7 @@ package com.gucheng.tcmmanager.controller;
 
 
 import com.gucheng.tcmmanager.dao.PrescriptionDao;
-import com.gucheng.tcmmanager.model.dto.MdcPropKind;
-import com.gucheng.tcmmanager.model.dto.MedicinePropDTO;
-import com.gucheng.tcmmanager.model.dto.PrescriptionDTO;
-import com.gucheng.tcmmanager.model.dto.PrescriptionTableDTO;
+import com.gucheng.tcmmanager.model.dto.*;
 import com.gucheng.tcmmanager.model.entity.MedicineEntity;
 import com.gucheng.tcmmanager.model.entity.MedicinePropertyEntity;
 import com.gucheng.tcmmanager.model.entity.PrescriptionEntity;
@@ -22,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -64,21 +62,29 @@ public class WebPrescriptionsController {
             prescriptionDTO.setPrescriptionId(prescription.getId());
             prescriptionDTO.setPrescriptionName(prescription.getName());
             prescriptionDTO.setPrescriptionDesc(prescription.getDescription());
-            prescriptionDTO.setPrescriptionMedicinesName(prescription.getMedicines().stream().map(MedicineEntity::getName).collect(Collectors.toList()));
+            List<PrescriptionMdcDTO> prescriptionMdcDTOList = new ArrayList<>();
+            prescription.getMedicines().forEach(prescriptionMedicine -> {
+                PrescriptionMdcDTO prescriptionMdcDTO = new PrescriptionMdcDTO();
+                prescriptionMdcDTO.setName(prescriptionMedicine.getMedicineEntity().getName());
+                prescriptionMdcDTO.setGram(prescriptionMedicine.getGram());
+                prescriptionMdcDTO.setWeight(prescriptionMedicine.getWeight());
+                prescriptionMdcDTOList.add(prescriptionMdcDTO);
+            });
+            prescriptionDTO.setPrescriptionMedicines(prescriptionMdcDTOList);
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             prescriptionDTO.setPrescriptionUpdatedTime(formatter.format(new Date(prescription.getUpdatedTime().getTime())));
 
-            List<MedicinePropDTO> medicinePropDTOList = new ArrayList<>();
+            List<PrescriptionMdcPropDTO> medicinePropDTOList = new ArrayList<>();
             for (MdcPropKind value : MdcPropKind.values()) {
-                AtomicInteger sum = new AtomicInteger();
+                AtomicReference<Double> sum = new AtomicReference<>((double) 0L);
                 prescription.getMedicines().forEach(medicine -> {
-                    for (MedicinePropertyEntity property : medicine.getProperties()) {
+                    for (MedicinePropertyEntity property : medicine.getMedicineEntity().getProperties()) {
                         if (property.getKind().equals(value.ordinal())) {
-                            sum.addAndGet(property.getLevel());
+                            sum.updateAndGet(v -> v + property.getLevel() * medicine.getGram() * medicine.getWeight());
                         }
                     }
                 });
-                medicinePropDTOList.add(MedicinePropDTO.builder().kind(value).level(sum.get()).build());
+                medicinePropDTOList.add(PrescriptionMdcPropDTO.builder().kind(value).level(sum.get()).build());
             }
             prescriptionDTO.setPrescriptionMdcPropSum(medicinePropDTOList);
             prescriptionTableDTO.getPrescriptionList().add(prescriptionDTO);
@@ -133,21 +139,29 @@ public class WebPrescriptionsController {
             prescriptionDTO.setPrescriptionId(prescription.getId());
             prescriptionDTO.setPrescriptionName(prescription.getName());
             prescriptionDTO.setPrescriptionDesc(prescription.getDescription());
-            prescriptionDTO.setPrescriptionMedicinesName(prescription.getMedicines().stream().map(MedicineEntity::getName).collect(Collectors.toList()));
+            List<PrescriptionMdcDTO> prescriptionMdcDTOList = new ArrayList<>();
+            prescription.getMedicines().forEach(prescriptionMedicine -> {
+                PrescriptionMdcDTO prescriptionMdcDTO = new PrescriptionMdcDTO();
+                prescriptionMdcDTO.setName(prescriptionMedicine.getMedicineEntity().getName());
+                prescriptionMdcDTO.setGram(prescriptionMedicine.getGram());
+                prescriptionMdcDTO.setWeight(prescriptionMedicine.getWeight());
+                prescriptionMdcDTOList.add(prescriptionMdcDTO);
+            });
+            prescriptionDTO.setPrescriptionMedicines(prescriptionMdcDTOList);
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             prescriptionDTO.setPrescriptionUpdatedTime(formatter.format(new Date(prescription.getUpdatedTime().getTime())));
 
-            List<MedicinePropDTO> medicinePropDTOList = new ArrayList<>();
+            List<PrescriptionMdcPropDTO> medicinePropDTOList = new ArrayList<>();
             for (MdcPropKind value : MdcPropKind.values()) {
-                AtomicInteger sum = new AtomicInteger();
+                AtomicReference<Double> sum = new AtomicReference<>((double) 0L);
                 prescription.getMedicines().forEach(medicine -> {
-                    for (MedicinePropertyEntity property : medicine.getProperties()) {
+                    for (MedicinePropertyEntity property : medicine.getMedicineEntity().getProperties()) {
                         if (property.getKind().equals(value.ordinal())) {
-                            sum.addAndGet(property.getLevel());
+                            sum.updateAndGet(v -> v + property.getLevel() * medicine.getGram() * medicine.getWeight());
                         }
                     }
                 });
-                medicinePropDTOList.add(MedicinePropDTO.builder().kind(value).level(sum.get()).build());
+                medicinePropDTOList.add(PrescriptionMdcPropDTO.builder().kind(value).level(sum.get()).build());
             }
             prescriptionDTO.setPrescriptionMdcPropSum(medicinePropDTOList);
             prescriptionTableDTO.getPrescriptionList().add(prescriptionDTO);

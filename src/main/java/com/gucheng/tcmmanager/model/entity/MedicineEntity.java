@@ -50,10 +50,4 @@ public class MedicineEntity {
 
     @OneToOne(mappedBy = "medicineEntity",cascade = CascadeType.ALL, orphanRemoval = true)
     private MedicineExtendEntity medicineExtendEntity; // 中药额外信息：性味、归经、功效、临床应用等
-
-    @ManyToMany(mappedBy = "medicines")
-    @JsonIgnore
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private List<PrescriptionEntity> prescriptions;
 }

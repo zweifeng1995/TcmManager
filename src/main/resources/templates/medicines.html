@@ -12,322 +12,19 @@
     <script type="text/javascript" th:src="@{/js/jquery.min.js}"></script>
     <script type="text/javascript" th:src="@{/js/chart.js}"></script>
     <script th:inline="javascript">
-        let calculationMedicineList = [];
-        let allEmpProperties = [[${medicineDTO.properties}]];
-        let kindZhCnMap = [[${medicinePropertyKindMap}]];
-        let chart = null;
+        // ================================================== 初始化参数(Start) ==================================================
+        let mdcCalculationChart = null; // 药性计算直方图
 
-        document.addEventListener('DOMContentLoaded', function () {
-            const ctx = document.getElementById('myChart');
-            chart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: allEmpProperties.flatMap(value => kindZhCnMap[value.kind]),
-                    datasets: [{
-                        label: '药性总和',
-                        data: new Array(allEmpProperties.length).fill(0),
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
+        // 药性枚举类与中文的哈希表，格式：{"HOT": "热"}
+        // 作用1：知道总共有哪些药性
+        // 作用2：展示的时候转换为中文
+        const mdcPropKindMap = [[${mdcPropKindMap}]];
+        // ================================================== 初始化参数(End) ==================================================
 
-            const submit_medicine_form = document.getElementById('submit_medicine_form');
-            const delete_medicines_form = document.getElementById('delete_medicines_form');
-            const submit_prescription_form = document.getElementById('submit_prescription_form');
-
-            submit_medicine_form.addEventListener('submit', function (event) {
-                event.preventDefault();
-                const formData = new FormData(this);
-                const method = submit_medicine_form.getAttribute('method');
-                let tips = "";
-                if (method === "POST") {
-                    tips = "添加";
-                }
-                if (method === "PUT") {
-                    tips = "修改";
-                }
-                let errorMsg = "";
-                $.ajax({
-                    url: "/medicines",
-                    type: method,
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function (data) {
-                        showToast('success', '药材' + tips + '成功！', '操作成功');
-                        refreshTable();
-                    },
-                    error: function (xhr, status, error) {
-                        if (xhr != null && xhr.responseJSON != null && xhr.responseJSON.message != null) {
-                            errorMsg = xhr.responseJSON.message;
-                        }
-                        showToast('error', tips + '药材失败！\n' + errorMsg, '操作失败!');
-                    },
-                    complete: function () {
-                        submit_medicine_form.reset();
-                    }
-                })
-            });
-
-            delete_medicines_form.addEventListener('submit', function (event) {
-                event.preventDefault();
-                const formData = new FormData(this);
-                errorMsg = "";
-                $.ajax({
-                    url: "/medicines",
-                    type: 'DELETE',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function (data) {
-                        showToast('success', '药品删除成功！', '操作成功');
-                        delete_medicines_form.reset();
-                        clearCalculation();
-                        refreshTable();
-                    },
-                    error: function (xhr, status, error) {
-                        delete_medicines_form.reset();
-                        if (xhr != null && xhr.responseJSON != null && xhr.responseJSON.message != null) {
-                            errorMsg = xhr.responseJSON.message;
-                        }
-                        showToast('error', '删除药品失败！\n' + errorMsg, '操作失败!');
-                    },
-                    complete: function () {
-                    }
-                })
-            });
-
-            submit_prescription_form.addEventListener('submit', function (event) {
-                event.preventDefault();
-                const formData = new FormData(this);
-                errorMsg = "";
-                $.ajax({
-                    url: "/prescriptions",
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function (data) {
-                        submit_prescription_form.reset();
-                        showToast('success', '药方添加成功！', '操作成功');
-                    },
-                    error: function (xhr, status, error) {
-                        submit_prescription_form.reset();
-                        if (xhr != null && xhr.responseJSON != null && xhr.responseJSON.message != null) {
-                            errorMsg = xhr.responseJSON.message;
-                        }
-                        showToast('error', '药方添加失败！\n' + errorMsg, '操作失败!');
-                    },
-                    complete: function () {
-                    }
-                })
-            });
-        })
-
-        function updateSecondLevel() {
-            let medicineCategories = [[${medicineCategories}]];
-            const firstLevelSelect = document.getElementById('firstLevel');
-            const secondLevelSelect = document.getElementById('secondLevel');
-            const selectedValue = firstLevelSelect.value;
-
-            secondLevelSelect.innerHTML = '全选';
-
-            // 添加默认选项
-            const defaultOption = document.createElement('option');
-            defaultOption.value = '';
-            defaultOption.textContent = '全选';
-            secondLevelSelect.appendChild(defaultOption);
-
-            // 添加二级分类选项
-            if (medicineCategories[selectedValue] != null && medicineCategories[selectedValue].length > 0) {
-                medicineCategories[selectedValue].forEach(item => {
-                    const option = document.createElement('option');
-                    option.value = item;
-                    option.textContent = item;
-                    secondLevelSelect.appendChild(option);
-                });
-            }
-        }
-
-        function updateSecondLevelInput() {
-            let medicineCategories = [[${medicineCategories}]];
-            const firstLevelSelectInput = document.getElementById('firstLevelInput');
-            const secondLevelSelectInput = document.getElementById('secondLevelInput');
-            const selectedValueInput = firstLevelSelectInput.value;
-
-            secondLevelSelectInput.innerHTML = '全选';
-
-            // 添加默认选项
-            const defaultOption = document.createElement('option');
-            defaultOption.value = '';
-            defaultOption.textContent = '';
-            secondLevelSelectInput.appendChild(defaultOption);
-
-            // 添加二级分类选项
-            if (medicineCategories[selectedValueInput] != null && medicineCategories[selectedValueInput].length > 0) {
-                medicineCategories[selectedValueInput].forEach(item => {
-                    const option = document.createElement('option');
-                    option.value = item;
-                    option.textContent = item;
-                    secondLevelSelectInput.appendChild(option);
-                });
-            }
-        }
-
-        function openSubmitMedicineModal() {
-            const name = document.getElementById('name');
-            name.readOnly = false;
-            document.getElementById('submit_medicine_modal_title').innerText = "添加药材信息";
-            const submit_medicine_form = document.getElementById('submit_medicine_form');
-            submit_medicine_form.reset();
-            allEmpProperties.forEach((property) => {
-                document.getElementById(property.kind).innerHTML = 0;
-                document.getElementById("span_" + property.kind).innerHTML = 0;
-            });
-            submit_medicine_form.method = 'POST';
-            const submit_medicine_modal = new bootstrap.Modal(document.getElementById('submit_medicine_modal'));
-            submit_medicine_modal.show();
-        }
-
-        function openEditMedicineModal(button) {
-            const row = button.closest('tr');
-            const cells = row.getElementsByTagName('td');
-            const name = document.getElementById('name');
-            name.readOnly = true;
-            document.getElementById('submit_medicine_modal_title').innerText = "修改药材信息";
-            name.value = cells[2].getElementsByTagName('p')[0].innerText;
-            document.getElementById('firstLevelInput').value = cells[3].getElementsByTagName('p')[0].innerText;
-            updateSecondLevelInput();
-            document.getElementById('secondLevelInput').value = cells[4].getElementsByTagName('p')[0].innerText;
-            document.getElementById('mmpResearch').value = cells[5].getElementsByTagName('p')[0].innerText;
-            document.getElementById('natureAndFlavor').value = cells[6].getElementsByTagName('p')[0].innerText;
-            document.getElementById('channelTropism').value = cells[7].getElementsByTagName('p')[0].innerText;
-            document.getElementById('efficacy').value = cells[8].getElementsByTagName('p')[0].innerText;
-            document.getElementById('clinicalApplication').value = cells[9].getElementsByTagName('p')[0].innerText;
-
-            const raw_kind_show = cells[10].getElementsByTagName('span');
-            let kind_show_map = new Map();
-            Array.from(raw_kind_show).forEach((kind) => {
-                kind_key_value = kind.dataset.role.split(":");
-                kind_key = kind_key_value[0];
-                kind_value = kind_key_value[1];
-                kind_show_map.set(kind_key, kind_value);
-            })
-
-            allEmpProperties.forEach((property) => {
-                document.getElementById(property.kind).value = 0;
-                document.getElementById("span_" + property.kind).innerHTML = 0;
-            });
-
-            kind_show_map.forEach((value, key) => {
-                document.getElementById(key).value = value;
-                document.getElementById("span_" + key).innerText = value;
-            })
-
-            const submit_medicine_form = document.getElementById('submit_medicine_form');
-            submit_medicine_form.method = 'PUT';
-            const submit_medicine_modal = new bootstrap.Modal(document.getElementById('submit_medicine_modal'));
-            submit_medicine_modal.show();
-        }
-
-        function openSubmitPrescriptionModal() {
-            if (calculationMedicineList.length === 0) {
-                showToast('error', '请至少选择一味药材才能保存新药方！', '操作失败');
-                return;
-            }
-            const submit_prescription_modal = new bootstrap.Modal(document.getElementById('submit_prescription_modal'));
-            submit_prescription_modal.show();
-            const prescriptionTableBody = document.getElementById("prescriptionTableBody")
-            prescriptionTableBody.innerHTML = calculationMedicineList.map((calculationMedicine, index) => `
-                <tr>
-                    <td style="text-align: center;">
-                        ${calculationMedicine.name}
-                        <input type="hidden" name="prescriptionMedicinesName[${index}]" value="${calculationMedicine.name}">
-                    </td>
-                </tr>
-            `).join("");
-        }
-
-        function refreshCalculationTable() {
-            let calculateMap = new Map();
-            for (let index = 0; index < allEmpProperties.length; index++) {
-                calculateMap.set(allEmpProperties[index].kind, 0);
-            }
-            for (let index = 0; index < calculationMedicineList.length; index++) {
-                let properties = calculationMedicineList[index].properties;
-                for (let jIndex = 0; jIndex < properties.length; jIndex++) {
-                    let value = calculateMap.get(properties[jIndex].kind);
-                    calculateMap.set(properties[jIndex].kind, value + properties[jIndex].level);
-                }
-            }
-            let labelsList = []
-            let dataList = []
-            calculateMap.forEach((value, key) => {
-                labelsList.push(key);
-                dataList.push(value);
-            });
-
-            chart.data.datasets[0].data = dataList;
-            chart.update();
-
-            let calculationTable = document.getElementById("calculationTableBody");
-            calculationTable.innerHTML = calculationMedicineList.map((calculationMedicine, index) => `
-                <tr>
-                    <td style="text-align: center;">${index + 1}</td>
-                    <td style="text-align: center;">${calculationMedicine.name}</td>
-                    <td style="text-align: center;">
-                        <div class="input-group">
-                            <input type="number"
-                                   class="form-control"
-                                   id="weight"
-                                   step="0.01"
-                                   min="0.01"
-                                   value="1"
-                                   required>
-                            <span class="input-group-text">g</span>
-                        </div>
-                    </td>
-                    <td style="text-align: center;">
-                        <div class="input-group">
-                            <input type="number"
-                                   class="form-control"
-                                   id="coefficient"
-                                   step="0.01"
-                                   min="0"
-                                   max="10"
-                                   value="1"
-                                   required>
-                        </div>
-                    </td>
-                    <td style="text-align: center;">
-                        <button type="submit" class="p-0 border-0 bg-transparent" onclick="deleteFromCalculation(this)" value="${calculationMedicine.id}">
-                            <img style="height: 20px; width: 20px" src="/img/subtract.png" alt="删除"/>
-                        </button>
-                    </td>
-                </tr>
-            `).join("");
-            let deleteMedicinesInput = document.getElementById("deleteMedicines");
-            let query_ids = "";
-            calculationMedicineList.map(medicine => {
-                if (query_ids === "") {
-                    query_ids += medicine.id;
-                } else {
-                    query_ids += "," + medicine.id;
-                }
-            })
-            deleteMedicinesInput.value = query_ids;
-        }
-
+        // ================================================== 消息展示(Start) ==================================================
         function showToast(type, message, title) {
-            let toastId = 'toast-' + Date.now();
-            let toastHtml = `
+            const toastId = 'toast-' + Date.now();
+            const toastHtml = `
                 <div id="${toastId}" class="toast align-items-center text-bg-${type === 'error' ? 'danger' : type} border-0" role="alert">
                     <div class="d-flex">
                         <div class="toast-body">
@@ -340,117 +37,164 @@
                     </div>
                 </div>
             `;
-            let toastContainer = document.getElementById('toastContainer');
+            const toastContainer = document.getElementById('toastContainer');
             toastContainer.insertAdjacentHTML('beforeend', toastHtml);
 
-            let toastElement = document.getElementById(toastId);
-            let toast = new bootstrap.Toast(toastElement, {delay: 3000});
+            const toastElement = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastElement, {delay: 3000});
             toast.show();
 
             toastElement.addEventListener('hidden.bs.toast', function () {
                 toastElement.remove();
             });
         }
+        // ================================================== 消息展示(End) ==================================================
 
-        function clearCalculation() {
-            let checkboxes = document.getElementsByName("medicineCheckBox");
-            checkboxes.forEach((checkbox) => checkbox.checked = false);
-            calculationMedicineList = [];
-            refreshCalculationTable();
-        }
+        // ================================================== 药性计算器(Start) ==================================================
+        const mdcCalculator = {
+            isInit: false,
+            mdcPropCalMap: new Map(), // 药性计算时需要知道要计算哪些药性，格式：{"HOT": 0}
+            selectedMdcList: [], // 选中的要用于计算的药材列表
 
-        function deleteFromCalculation(deleteBtn) {
-            let checkbox = document.getElementById(deleteBtn.value);
-            if (null != checkbox) {
-                checkbox.checked = false;
-            }
-            calculationMedicineList.forEach((item, index) => {
-                if (item.id == deleteBtn.value) {
-                    calculationMedicineList.splice(index, 1);
+            init() { // 初始化
+                Object.keys(mdcPropKindMap).forEach(key => {
+                    this.mdcPropCalMap.set(key, 0);
+                });
+                this.isInit = true;
+            },
+
+            calculate() { // 计算药性
+                // 重置计算映射
+                Object.keys(mdcPropKindMap).forEach(key => {
+                    this.mdcPropCalMap.set(key, 0);
+                });
+                // 计算药性
+                for (const mdc of this.selectedMdcList) { // 遍历所有选中的药材
+                    for (const prop of mdc.medicine.properties) { // 获取每个药材的药性，针对每个药材的每个药性进行计算并相加
+                        const value = this.mdcPropCalMap.get(prop.kind); // 获取当前计算映射中的值
+                        this.mdcPropCalMap.set( // 将新的药性计算值加到已有的值中
+                            prop.kind,
+                            value + prop.level * mdc.gram * mdc.weight
+                        );
+                    }
                 }
-            });
-            refreshCalculationTable();
-        }
+            },
 
-        function deleteFromCalculationById(id) {
-            calculationMedicineList.forEach((item, index) => {
-                if (item.id == id) {
-                    calculationMedicineList.splice(index, 1);
+            pushMdcInfo(mdcInfo) { // 添加药材，格式：{"medicine": medicine, "weight": 1, "gram": 1}
+                if (!this.isInit) {
+                    console.log("The mdcCalculator does not initialize!");
+                    return;
                 }
-            });
-            refreshCalculationTable();
-        }
+                this.selectedMdcList.push(mdcInfo); // 将药材加入到选中列表中
+                this.calculate(); // 重新计算药性总和
+            },
 
-        function addToCalculation(checkbox, medicine) {
-            if (calculationMedicineList.length >= 50) {
-                alert("1个药方最多添加50个药材！");
-                checkbox.checked = false;
-                return;
+            deleteMdcInfo(id) {
+                this.selectedMdcList.forEach((item, index) => {
+                    if (item.medicine.id == id) {
+                        mdcCalculator.selectedMdcList.splice(index, 1);
+                    }
+                });
+                this.calculate(); // 重新计算药性总和
+            },
+
+            updateMdcInfo(id, key, value) {
+                mdcCalculator.selectedMdcList.forEach((item, index) => {
+                    if (item.medicine.id == id) {
+                        if (key == 'gram') {
+                            item.gram = value;
+                        }
+                        if (key == 'weight') {
+                            item.weight = value;
+                        }
+                    }
+                });
+                mdcCalculator.calculate();
+            },
+
+            clear() {
+                if (!this.isInit) {
+                    console.log("The mdcCalculator does not initialize!");
+                    return;
+                }
+                this.selectedMdcList = []; // 清空选中列表
+                this.calculate(); // 重新计算药性总和
             }
-            if (checkbox.checked) {
-                calculationMedicineList.push(medicine);
-            } else {
-                deleteFromCalculationById(medicine.id);
+        };
+        mdcCalculator.init();
+        // ================================================== 药性计算器(End) ==================================================
+
+
+        // ================================================== 查询药材按钮的相关操作(Start) ==================================================
+        // 更新二级分类下拉列表
+        function updateQuerySecondLevel() {
+            const mdcCategories = [[${mdcCategories}]];
+            const queryFirstLevelSelect = document.getElementById('queryFirstLevel');
+            const querySecondLevelSelect = document.getElementById('querySecondLevel');
+            const selectedValue = queryFirstLevelSelect.value;
+
+            querySecondLevelSelect.innerHTML = '全选';
+
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = '全选';
+            querySecondLevelSelect.appendChild(defaultOption);
+
+            if (mdcCategories[selectedValue] != null && mdcCategories[selectedValue].length > 0) {
+                mdcCategories[selectedValue].forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item;
+                    option.textContent = item;
+                    querySecondLevelSelect.appendChild(option);
+                });
             }
-            refreshCalculationTable();
         }
+        // ================================================== 查询药材按钮的相关操作(End) ==================================================
 
-        function updateMdcPropKindSpanValue(id, value) {
-            document.getElementById("span_" + id).innerHTML = value;
-        }
-
-        function query() {
-            refreshTable();
-        }
-
-        function refreshTable(pageNum) {
+        // ================================================== 查询药材表格(Start) ==================================================
+        function refreshMedicinesTable(pageNum) {
             if (pageNum == null) {
                 pageNum = 1;
             }
-            let query_medicine_name = document.getElementById("query_medicine_name");
-            let query_efficacy = document.getElementById("query_efficacy");
-            let query_clinical_application = document.getElementById("query_clinical_application");
-            let first_category = document.getElementById("firstLevel");
-            let second_category = document.getElementById("secondLevel");
+            let queryMedicineName = document.getElementById("queryMedicineName");
+            let queryEfficacy = document.getElementById("queryEfficacy");
+            let queryClinicalApplication = document.getElementById("queryClinicalApplication");
+            let queryFirstLevel = document.getElementById("queryFirstLevel");
+            let querySecondLevel = document.getElementById("querySecondLevel");
+            let queryNatureAndFlavor = document.getElementById("queryNatureAndFlavor");
+            let queryChannelTropism = document.getElementById("queryChannelTropism");
 
-            let queryKinds = "";
-            let properties = [[${medicineDTO.properties}]];
-            let kinds = properties.map(property => property.kind);
-            kinds.map(kind => {
-                query_kind_checkbox = document.getElementById("query_" + kind);
-                if (query_kind_checkbox != null && query_kind_checkbox.checked) {
-                    if (queryKinds == "") {
-                        queryKinds += kind;
-                    } else {
-                        queryKinds += "," + kind;
-                    }
-                }
-            })
             let queryString = "?pageNum=" + pageNum;
-            if (query_medicine_name != null && query_medicine_name.value != null && query_medicine_name.value != "") {
-                queryString += "&name=" + query_medicine_name.value;
+            if (queryMedicineName != null && queryMedicineName.value != null && queryMedicineName.value != "") {
+                queryString += "&name=" + queryMedicineName.value;
             }
-            if (query_efficacy != null && query_efficacy.value != null && query_efficacy.value != "") {
-                queryString += "&efficacy=" + query_efficacy.value;
+            if (queryEfficacy != null && queryEfficacy.value != null && queryEfficacy.value != "") {
+                queryString += "&efficacy=" + queryEfficacy.value;
             }
-            if (query_clinical_application != null && query_clinical_application.value != null && query_clinical_application.value != "") {
-                queryString += "&clinical_application=" + query_clinical_application.value;
+            if (queryClinicalApplication != null && queryClinicalApplication.value != null && queryClinicalApplication.value != "") {
+                queryString += "&clinical_application=" + queryClinicalApplication.value;
             }
-            if (first_category != null && first_category.value != null && first_category.value != "") {
-                queryString += "&first_category=" + first_category.value;
+            if (queryFirstLevel != null && queryFirstLevel.value != null && queryFirstLevel.value != "") {
+                queryString += "&first_category=" + queryFirstLevel.value;
             }
-            if (second_category != null && second_category.value != null && second_category.value != "") {
-                queryString += "&second_category=" + second_category.value;
+            if (querySecondLevel != null && querySecondLevel.value != null && querySecondLevel.value != "") {
+                queryString += "&second_category=" + querySecondLevel.value;
+            }
+            if (queryNatureAndFlavor != null && queryNatureAndFlavor.value != null && queryNatureAndFlavor.value != "") {
+                queryString += "&nature_and_flavor=" + queryNatureAndFlavor.value;
+            }
+            if (queryChannelTropism != null && queryChannelTropism.value != null && queryChannelTropism.value != "") {
+                queryString += "&channel_tropism=" + queryChannelTropism.value;
             }
             $.ajax({
-                url: "/refreshTable" + queryString,
+                url: "/refreshMedicinesTable" + queryString,
                 type: 'GET',
                 success: function (data) {
                     $("#medicineTable").html(data);
                     let medicineCheckBoxList = document.getElementsByName('medicineCheckBox');
                     Array.from(medicineCheckBoxList).forEach(function (checkbox) {
-                        calculationMedicineList.forEach(item => {
-                            if (item.id == checkbox.id) {
+                        mdcCalculator.selectedMdcList.forEach(item => {
+                            if (item.medicine.id == checkbox.id) {
                                 checkbox.checked = true;
                                 return;
                             }
@@ -459,6 +203,374 @@
                 }
             })
         }
+        // ================================================== 查询药材表格(End) ==================================================
+
+        // ================================================== 打开添加药材页面(Start) ==================================================
+        function openSubmitMedicineModal() {
+            const submitMedicineModal = new bootstrap.Modal(document.getElementById('submitMedicineModal'));
+            submitMedicineModal.show();
+        }
+
+        function updateSecondLevelInput() {
+            const mdcCategories = [[${mdcCategories}]];
+            const firstLevelSelectInput = document.getElementById('firstLevelInput');
+            const secondLevelSelectInput = document.getElementById('secondLevelInput');
+            const selectedValueInput = firstLevelSelectInput.value;
+
+            secondLevelSelectInput.innerHTML = '';
+
+            if (mdcCategories[selectedValueInput] != null && mdcCategories[selectedValueInput].length > 0) {
+                mdcCategories[selectedValueInput].forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item;
+                    option.textContent = item;
+                    secondLevelSelectInput.appendChild(option);
+                });
+            }
+        }
+        // ================================================== 打开添加药材页面(End) ==================================================
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // ================================================== 初始化药性计算直方图(Start) ==================================================
+            const mdcPropKindKeys = Array.from(mdcCalculator.mdcPropCalMap.keys()); // 直方图中要展示计算的药性，格式：["HOT"]
+            const mdcCalChartElement = document.getElementById('mdcCalChartElement');
+            mdcCalculationChart = new Chart(mdcCalChartElement, {
+                type: 'bar',
+                data: {
+                    labels: mdcPropKindKeys.map(key => mdcPropKindMap[key]), // 药性中文名称
+                    datasets: [{
+                        label: '药性总和',
+                        data: mdcPropKindKeys.map(key => mdcCalculator.mdcPropCalMap.get(key)), // 药性总和
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            // ================================================== 初始化药性计算直方图(End) ==================================================
+
+            // ================================================== 添加药材(Start) ==================================================
+            const submitMedicineForm = document.getElementById('submitMedicineForm');
+            // 添加药材表单提交
+            submitMedicineForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+                $.ajax({
+                    url: "/medicines",
+                    type: "POST",
+                    data: new FormData(this),
+                    processData: false,
+                    contentType: false,
+                    success: function (data) {
+                        showToast("success", "添加药材成功！", "操作成功");
+                        refreshMedicinesTable();
+                        submitMedicineForm.reset();
+                        updateSecondLevelInput();
+                        Object.keys(mdcPropKindMap).forEach(key => {
+                            document.getElementById(key).value = 0;
+                            document.getElementById(key + "Span").innerText = 0;
+                            document.getElementById(key + "Hidden").innerText = 0;
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        let errorMsg = "未知错误。";
+                        if (xhr != null && xhr.responseJSON != null && xhr.responseJSON.message != null) {
+                            errorMsg = xhr.responseJSON.message;
+                        }
+                        showToast("error", "添加药材失败！\n失败原因：" + errorMsg, "操作失败");
+                    },
+                    complete: function () {
+                    }
+                })
+            });
+            // ================================================== 添加药材(End) ==================================================
+
+            // ================================================== 修改药材(Start) ==================================================
+            const editMedicineForm = document.getElementById('editMedicineForm');
+            editMedicineForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+                $.ajax({
+                    url: "/medicines",
+                    type: "PUT",
+                    data: new FormData(this),
+                    processData: false,
+                    contentType: false,
+                    success: function (data) {
+                        showToast("success", "修改药材成功！", "操作成功");
+                        refreshMedicinesTable();
+                        editMedicineForm.reset();
+                    },
+                    error: function (xhr, status, error) {
+                        let errorMsg = "未知错误。";
+                        if (xhr != null && xhr.responseJSON != null && xhr.responseJSON.message != null) {
+                            errorMsg = xhr.responseJSON.message;
+                        }
+                        showToast("error", "修改药材失败！\n失败原因：" + errorMsg, "操作失败");
+                    },
+                    complete: function () {
+                    }
+                })
+            });
+            // ================================================== 修改药材(End) ==================================================
+
+            // ================================================== 删除药材(Start) ==================================================
+            const deleteMedicinesForm = document.getElementById('deleteMedicinesForm');
+            deleteMedicinesForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+                $.ajax({
+                    url: "/medicines",
+                    type: "DELETE",
+                    data: new FormData(this),
+                    processData: false,
+                    contentType: false,
+                    success: function (data) {
+                        showToast("success", "删除药材成功！", "操作成功");
+                        clearCalculation();
+                        deleteMedicinesForm.reset();
+                        refreshMedicinesTable();
+                    },
+                    error: function (xhr, status, error) {
+                        let errorMsg = "未知错误。";
+                        if (xhr != null && xhr.responseJSON != null && xhr.responseJSON.message != null) {
+                            errorMsg = xhr.responseJSON.message;
+                        }
+                        showToast('error', "删除药材失败！\n失败原因：" + errorMsg, "操作失败");
+                    },
+                    complete: function () {
+                    }
+                })
+            });
+            // ================================================== 删除药材(End) ==================================================
+
+            // ================================================== 添加药方(Start) ==================================================
+            const submitPrescriptionForm = document.getElementById('submitPrescriptionForm');
+            submitPrescriptionForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+                $.ajax({
+                    url: "/prescriptions",
+                    type: "POST",
+                    data: new FormData(this),
+                    processData: false,
+                    contentType: false,
+                    success: function (data) {
+                        showToast("success", "药方添加成功！", "操作成功");
+                    },
+                    error: function (xhr, status, error) {
+                        let errorMsg = "未知错误。";
+                        if (xhr != null && xhr.responseJSON != null && xhr.responseJSON.message != null) {
+                            errorMsg = xhr.responseJSON.message;
+                        }
+                        showToast('error', "药方添加失败！\n失败原因：" + errorMsg, "操作失败!");
+                    },
+                    complete: function () {
+                    }
+                })
+            });
+            // ================================================== 删除药方(End) ==================================================
+        })
+
+        // ================================================== 打开编辑药材页面(Start) ==================================================
+        function openEditMedicineModal(button) {
+            const row = button.closest('tr');
+            const cells = row.getElementsByTagName('td');
+            const editName = document.getElementById('editName');
+            editName.value = cells[2].getElementsByTagName('p')[0].innerText;
+            editName.readOnly = true;
+            document.getElementById('editFirstLevelInput').value = cells[3].getElementsByTagName('p')[0].innerText;
+            updateEditSecondLevelInput();
+            document.getElementById('editSecondLevelInput').value = cells[4].getElementsByTagName('p')[0].innerText;
+            document.getElementById('editMmpResearch').value = cells[5].getElementsByTagName('p')[0].innerText;
+            document.getElementById('editNatureAndFlavor').value = cells[6].getElementsByTagName('p')[0].innerText;
+            document.getElementById('editChannelTropism').value = cells[7].getElementsByTagName('p')[0].innerText;
+            document.getElementById('editEfficacy').value = cells[8].getElementsByTagName('p')[0].innerText;
+            document.getElementById('editClinicalApplication').value = cells[9].getElementsByTagName('p')[0].innerText;
+
+            const rawKindShow = cells[10].getElementsByTagName('span');
+            const kindShowMap = new Map();
+            Array.from(rawKindShow).forEach((kind) => {
+                kindKeyValue = kind.dataset.role.split(":");
+                kindKey = kindKeyValue[0];
+                kindValue = kindKeyValue[1];
+                kindShowMap.set(kindKey, kindValue);
+            });
+            Object.keys(mdcPropKindMap).forEach(key => {
+                document.getElementById("edit" + key).value = 0;
+                document.getElementById("edit" + key + "Span").innerText = 0;
+                document.getElementById("edit" + key + "Hidden").innerText = 0;
+            });
+            kindShowMap.forEach((value, key) => {
+                document.getElementById("edit" + key).value = value;
+                document.getElementById("edit" + key + "Span").innerText = value;
+                document.getElementById("edit" + key + "Hidden").innerText = value;
+            });
+
+            const editMedicineModal = new bootstrap.Modal(document.getElementById('editMedicineModal'));
+            editMedicineModal.show();
+        }
+        function updateEditSecondLevelInput() {
+            let mdcCategories = [[${mdcCategories}]];
+            const editFirstLevelInput = document.getElementById('editFirstLevelInput');
+            const editSecondLevelInput = document.getElementById('editSecondLevelInput');
+            const selectedValueInput = editFirstLevelInput.value;
+
+            editSecondLevelInput.innerHTML = '';
+
+            if (mdcCategories[selectedValueInput] != null && mdcCategories[selectedValueInput].length > 0) {
+                mdcCategories[selectedValueInput].forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item;
+                    option.textContent = item;
+                    editSecondLevelInput.appendChild(option);
+                });
+            }
+        }
+        // ================================================== 打开编辑药材页面(End) ==================================================
+
+        // ================================================== 添加药方(Start) ==================================================
+        function openSubmitPrescriptionModal() {
+            if (mdcCalculator.selectedMdcList.length == 0) {
+                showToast('error', '请至少选择一味药材才能保存新药方！', '操作失败');
+                return;
+            }
+            const submitPrescriptionModal = new bootstrap.Modal(document.getElementById('submitPrescriptionModal'));
+            submitPrescriptionModal.show();
+            const prescriptionTableBody = document.getElementById("prescriptionTableBody")
+            prescriptionTableBody.innerHTML = mdcCalculator.selectedMdcList.map((medicineInfo, index) => `
+                <tr>
+                    <td style="text-align: center;">
+                        ${index}
+                    </td>
+                    <td style="text-align: center;">
+                        ${medicineInfo.medicine.name}
+                        <input type="hidden" name="prescriptionMedicines[${index}].name" value="${medicineInfo.medicine.name}">
+                    </td>
+                    <td style="text-align: center;">
+                        ${medicineInfo.gram}
+                        <input type="hidden" name="prescriptionMedicines[${index}].gram" value="${medicineInfo.gram}">
+                    </td>
+                    <td style="text-align: center;">
+                        ${medicineInfo.weight}
+                        <input type="hidden" name="prescriptionMedicines[${index}].weight" value="${medicineInfo.weight}">
+                    </td>
+                </tr>
+            `).join("");
+        }
+        // ================================================== 添加药方(End) ==================================================
+
+        // ================================================== 更新计算器表格(Start) ==================================================
+        function addOrDelToCalculator(checkbox, medicine) {
+            if (mdcCalculator.selectedMdcList.length >= 50) {
+                alert("1 个药方最多添加 50 个药材！");
+                checkbox.checked = false;
+                return;
+            }
+            if (checkbox.checked) { // 添加药材到计算器
+                medicineInfo = {
+                    "medicine": medicine,
+                    "gram": 1.0,
+                    "weight": 1.0
+                }
+                mdcCalculator.pushMdcInfo(medicineInfo);
+            } else { // 从计算器中删除药材
+                mdcCalculator.deleteMdcInfo(medicine.id);
+            }
+            refreshCalculationTable();
+        }
+
+        function updateMdcInfoInCalculator(obj, key, value) {
+            mdcCalculator.updateMdcInfo(obj.dataset.id, key, value);
+            refreshChart();
+        }
+
+        function deleteFromCalculator(btn) {
+            const checkbox = document.getElementById(btn.value);
+            if (null != checkbox) {
+                checkbox.checked = false;
+            }
+            mdcCalculator.deleteMdcInfo(btn.value);
+            refreshCalculationTable();
+        }
+
+        function clearCalculation() {
+            let checkboxes = document.getElementsByName("medicineCheckBox");
+            checkboxes.forEach((checkbox) => checkbox.checked = false);
+            mdcCalculator.clear();
+            refreshCalculationTable();
+        }
+
+        function refreshCalculationTable() {
+            const calculationTable = document.getElementById("calculationTableBody");
+            calculationTable.innerHTML = mdcCalculator.selectedMdcList.map((item, index) => `
+                <tr>
+                    <td style="text-align: center;">${index + 1}</td>
+                    <td style="text-align: center;">${item.medicine.name}</td>
+                    <td style="text-align: center;">
+                        <div class="input-group">
+                            <input type="number"
+                                   class="form-control"
+                                   name="weight"
+                                   step="0.01"
+                                   min="0.01"
+                                   value="${item.gram}"
+                                   data-id="${item.medicine.id}"
+                                   onchange="updateMdcInfoInCalculator(this, 'gram', this.value)"
+                                   required>
+                        </div>
+                    </td>
+                    <td style="text-align: center;">
+                        <div class="input-group">
+                            <input type="number"
+                                   class="form-control"
+                                   name="coefficient"
+                                   step="0.01"
+                                   min="0"
+                                   max="10"
+                                   value="${item.weight}"
+                                   data-id="${item.medicine.id}"
+                                   onchange="updateMdcInfoInCalculator(this, 'weight', this.value)"
+                                   required>
+                        </div>
+                    </td>
+                    <td style="text-align: center;">
+                        <button type="submit" class="p-0 border-0 bg-transparent" onclick="deleteFromCalculator(this)" value="${item.medicine.id}">
+                            <img style="height: 20px; width: 20px" src="/img/subtract.png" alt="删除"/>
+                        </button>
+                    </td>
+                </tr>
+            `).join("");
+
+            refreshChart();
+
+            const deleteMedicines = document.getElementById("deleteMedicines");
+            let query_ids = "";
+            mdcCalculator.selectedMdcList.map(item => {
+                if (query_ids === "") {
+                    query_ids += item.medicine.id;
+                } else {
+                    query_ids += "," + item.medicine.id;
+                }
+            })
+            deleteMedicines.value = query_ids;
+        }
+
+        function refreshChart() {
+            const mdcPropKindKeys = Array.from(mdcCalculator.mdcPropCalMap.keys()); // 直方图中要展示计算的药性，格式：["HOT"]
+            mdcCalculationChart.data.labels =  mdcPropKindKeys.map(key => mdcPropKindMap[key]);
+            mdcCalculationChart.data.datasets[0].data = mdcPropKindKeys.map(key => mdcCalculator.mdcPropCalMap.get(key));
+            mdcCalculationChart.update();
+        }
+        // ================================================== 更新计算器表格(End) ==================================================
+
+        // ================================================== 药性组件关联更新(Start) ==================================================
+        function updateMdcPropKindSpanValue(id, value) {
+            document.getElementById(id + "Span").innerText = value;
+            document.getElementById(id + "Hidden").innerText = value;
+        }
+        // ================================================== 药性组件关联更新(End) ==================================================
     </script>
 </head>
 
@@ -477,35 +589,55 @@
                     <div class="row my-3">
                         <div class="col-3 align-middle">
                             <div class="row">
-                                <label for="query_medicine_name" class="col-3 col-form-label">
+                                <label for="queryMdcName" class="col-3 col-form-label">
                                     <strong>名称：</strong>
                                 </label>
                                 <div class="col-9">
-                                    <input type="text" class="form-control" name="query_medicine_name"
-                                           id="query_medicine_name"
-                                           placeholder="请输入..."/>
+                                    <input type="text" class="form-control" name="queryMdcName" id="queryMdcName" placeholder="请输入..."/>
                                 </div>
                             </div>
                         </div>
                         <div class="col-3 align-middle">
                             <div class="row">
-                                <label for="query_efficacy" class="col-3 col-form-label">
-                                    <strong>功效：</strong>
-                                </label>
-                                <div class="col-9">
-                                    <input type="text" class="form-control" name="query_efficacy" id="query_efficacy"
-                                           placeholder="请输入..."/>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-3 align-middle">
-                            <div class="row">
-                                <label for="query_clinical_application" class="col-4 col-form-label">
+                                <label for="queryClinicalApplication" class="col-4 col-form-label">
                                     <strong>临床应用：</strong>
                                 </label>
                                 <div class="col-8">
-                                    <input type="text" class="form-control" name="query_clinical_application"
-                                           id="query_clinical_application" placeholder="请输入..."/>
+                                    <input type="text" class="form-control" name="queryClinicalApplication" id="queryClinicalApplication" placeholder="请输入..."/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-3"></div>
+                        <div class="col-3"></div>
+                    </div>
+                    <div class="row my-3">
+                        <div class="col-3 align-middle">
+                            <div class="row">
+                                <label for="queryNatureAndFlavor" class="col-3 col-form-label">
+                                    <strong>性味：</strong>
+                                </label>
+                                <div class="col-9">
+                                    <input type="text" class="form-control" name="queryNatureAndFlavor" id="queryNatureAndFlavor" placeholder="请输入..."/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-3 align-middle">
+                            <div class="row">
+                                <label for="queryChannelTropism" class="col-3 col-form-label">
+                                    <strong>归经：</strong>
+                                </label>
+                                <div class="col-9">
+                                    <input type="text" class="form-control" name="queryChannelTropism" id="queryChannelTropism" placeholder="请输入..."/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-3 align-middle">
+                            <div class="row">
+                                <label for="queryEfficacy" class="col-4 col-form-label">
+                                    <strong>功效：</strong>
+                                </label>
+                                <div class="col-8">
+                                    <input type="text" class="form-control" name="queryEfficacy" id="queryEfficacy" placeholder="请输入..."/>
                                 </div>
                             </div>
                         </div>
@@ -516,18 +648,14 @@
                             <div class="row">
                                 <strong class="col-1 col-form-label">一级分类：</strong>
                                 <div class="col-5 d-flex">
-                                    <select id="firstLevel" class="form-select" aria-label="一级分类"
-                                            onchange="updateSecondLevel()">
+                                    <select id="queryFirstLevel" class="form-select" aria-label="一级分类" onchange="updateQuerySecondLevel()">
                                         <option selected value="">全选</option>
-                                        <option th:each="category : ${medicineCategories.keySet()}"
-                                                th:value="${category}"
-                                                th:text="${category}">
-                                        </option>
+                                        <option th:each="category : ${mdcCategories.keySet()}" th:value="${category}" th:text="${category}"></option>
                                     </select>
                                 </div>
                                 <strong class="col-1 col-form-label">二级分类：</strong>
                                 <div class="col-5 d-flex">
-                                    <select id="secondLevel" class="form-select" aria-label="二级分类">
+                                    <select id="querySecondLevel" class="form-select" aria-label="二级分类">
                                         <option selected value="">全选</option>
                                     </select>
                                 </div>
@@ -535,7 +663,7 @@
                         </div>
                         <div class="col-2"></div>
                         <div class="col-1">
-                            <button type="button" class="btn btn-primary" style="width: 100%;" onclick="query()">查询
+                            <button type="button" class="btn btn-primary" style="width: 100%;" onclick="refreshMedicinesTable()">查询
                             </button>
                         </div>
                     </div>
@@ -546,13 +674,8 @@
         <div class="row my-3">
             <div class="col-12">
                 <div class="container-flex">
-                    <button type="button" class="btn btn-primary" onclick="openSubmitMedicineModal()">
-                        添加药材信息
-                    </button>
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                            data-bs-target="#delete_medicine_modal">
-                        批量删除
-                    </button>
+                    <button type="button" class="btn btn-primary" onclick="openSubmitMedicineModal()">添加药材信息</button>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#deleteMedicineModal">批量删除</button>
                 </div>
             </div>
         </div>
@@ -607,7 +730,7 @@
                                 <label>
                                     <input class="form-check-input" type="checkbox" th:id="${medicine.id}"
                                            name="medicineCheckBox"
-                                           th:onclick="addToCalculation(this, [[${medicine}]])">
+                                           th:onclick="addOrDelToCalculator(this, [[${medicine}]])">
                                 </label>
                             </td>
                             <td class="overflow-auto justify-content-center align-items-center text-center"
@@ -670,21 +793,21 @@
                             <ul class="pagination">
                                 <li th:class="${medicineTableDTO.pageNum} > 1 ? 'page-item' : 'page-item disabled'">
                                     <p class="page-link" style="cursor: pointer"
-                                       th:onclick="refreshTable(1)">
+                                       th:onclick="refreshMedicinesTable(1)">
                                         <<</p>
                                 </li>
                                 <li th:class="${medicineTableDTO.pageNum} > 1 ? 'page-item' : 'page-item disabled'">
                                     <p class="page-link" style="cursor: pointer"
-                                       th:onclick="refreshTable([[${medicineTableDTO.pageNum - 1}]])"><</p>
+                                       th:onclick="refreshMedicinesTable([[${medicineTableDTO.pageNum - 1}]])"><</p>
                                 </li>
                                 <li class="page-item" th:if="${medicineTableDTO.pageNum - 2} > 0">
                                     <p class="page-link" style="cursor: pointer"
-                                       th:onclick="refreshTable([[${medicineTableDTO.pageNum - 2}]])"
+                                       th:onclick="refreshMedicinesTable([[${medicineTableDTO.pageNum - 2}]])"
                                        th:text="${medicineTableDTO.pageNum - 2}"></p>
                                 </li>
                                 <li class="page-item" th:if="${medicineTableDTO.pageNum - 1} > 0">
                                     <p class="page-link" style="cursor: pointer"
-                                       th:onclick="refreshTable([[${medicineTableDTO.pageNum - 1}]])"
+                                       th:onclick="refreshMedicinesTable([[${medicineTableDTO.pageNum - 1}]])"
                                        th:text="${medicineTableDTO.pageNum - 1}"></p>
                                 </li>
                                 <li class="page-item active">
@@ -693,22 +816,22 @@
                                 <li class="page-item"
                                     th:if="${medicineTableDTO.pageNum + 1} <= ${medicineTableDTO.totalPage}">
                                     <p class="page-link" style="cursor: pointer"
-                                       th:onclick="refreshTable([[${medicineTableDTO.pageNum + 1}]])"
+                                       th:onclick="refreshMedicinesTable([[${medicineTableDTO.pageNum + 1}]])"
                                        th:text="${medicineTableDTO.pageNum + 1}"></p>
                                 </li>
                                 <li class="page-item"
                                     th:if="${medicineTableDTO.pageNum + 2} <= ${medicineTableDTO.totalPage}">
                                     <p class="page-link" style="cursor: pointer"
-                                       th:onclick="refreshTable([[${medicineTableDTO.pageNum + 2}]])"
+                                       th:onclick="refreshMedicinesTable([[${medicineTableDTO.pageNum + 2}]])"
                                        th:text="${medicineTableDTO.pageNum + 2}"></p>
                                 </li>
                                 <li th:class="${medicineTableDTO.pageNum} < ${medicineTableDTO.totalPage} ? 'page-item' : 'page-item disabled'">
                                     <p class="page-link" style="cursor: pointer"
-                                       th:onclick="refreshTable([[${medicineTableDTO.pageNum + 1}]])">></p>
+                                       th:onclick="refreshMedicinesTable([[${medicineTableDTO.pageNum + 1}]])">></p>
                                 </li>
                                 <li th:class="${medicineTableDTO.pageNum} < ${medicineTableDTO.totalPage} ? 'page-item' : 'page-item disabled'">
                                     <p class="page-link" style="cursor: pointer"
-                                       th:onclick="refreshTable([[${medicineTableDTO.totalPage}]])">>></p>
+                                       th:onclick="refreshMedicinesTable([[${medicineTableDTO.totalPage}]])">>></p>
                                 </li>
                             </ul>
                         </div>
@@ -734,10 +857,10 @@
                                         药材名
                                     </th>
                                     <th style="text-align: center; vertical-align: middle; min-width: 100px;background-color: #EDE2C9;">
-                                        克数
+                                        克数<br/>(单位:g)
                                     </th>
                                     <th style="text-align: center; vertical-align: middle; min-width: 80px;background-color: #EDE2C9;">
-                                        权重<br/>(1-10之间)
+                                        权重<br/>(1-10)
                                     </th>
                                     <th style="text-align: center; vertical-align: middle; min-width: 50px; background-color: #EDE2C9;">
                                         操作
@@ -748,7 +871,7 @@
                             </table>
                         </div>
                         <div>
-                            <canvas id="myChart"></canvas>
+                            <canvas id="mdcCalChartElement"></canvas>
                         </div>
                     </div>
                     <div class="d-flex flex-row-reverse">
@@ -763,18 +886,16 @@
             </div>
         </div>
     </div>
-    <div class="modal fade" id="submit_medicine_modal">
+    <div class="modal fade" id="submitMedicineModal">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <strong class="fas fa-user-edit me-2" id="submit_medicine_modal_title"></strong>
+                        <strong class="fas fa-user-edit me-2">添加药材</strong>
                     </h5>
-                    <button type="button" class="btn-close" aria-label="Close"
-                            data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" aria-label="Close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="submit_medicine_form" method="POST" th:action="@{/medicines}"
-                      th:object="${medicineDTO}" autocomplete="off">
+                <form id="submitMedicineForm" method="POST" th:action="@{/medicines}" th:object="${submitMedicineDTO}" autocomplete="off">
                     <div class="modal-body">
                         <div class="row mb-3">
                             <div class="col-md-6">
@@ -789,20 +910,14 @@
                         <div class="row mb-3">
                             <strong class="col-md-2 col-form-label">一级分类：</strong>
                             <div class="col-md-4">
-                                <select id="firstLevelInput" class="form-select" aria-label="一级分类"
-                                        onchange="updateSecondLevelInput()" th:field="*{firstCategory}">
-                                    <option selected value=""></option>
-                                    <option th:each="category : ${medicineCategories.keySet()}"
-                                            th:value="${category}"
-                                            th:text="${category}">
-                                    </option>
+                                <select id="firstLevelInput" class="form-select" aria-label="一级分类" onchange="updateSecondLevelInput()" name="firstCategory">
+                                    <option th:each="category : ${mdcCategories.keySet()}" th:selected="${category == '暂未归类'}" th:value="${category}" th:text="${category}"></option>
                                 </select>
                             </div>
                             <strong class="col-md-2 col-form-label">二级分类：</strong>
                             <div class="col-md-4">
-                                <select id="secondLevelInput" class="form-select" aria-label="二级分类"
-                                        th:field="*{secondCategory}">
-                                    <option selected value=""></option>
+                                <select id="secondLevelInput" class="form-select" aria-label="二级分类" th:field="*{secondCategory}">
+                                    <option selected th:value="${mdcCategories.get('暂未归类')}" th:text="${mdcCategories.get('暂未归类')[0]}"></option>
                                 </select>
                             </div>
                         </div>
@@ -811,8 +926,7 @@
                                 <strong>性味：</strong>
                             </label>
                             <label>
-                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64"
-                                          th:field="*{natureAndFlavor}"></textarea>
+                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64" th:field="*{natureAndFlavor}"></textarea>
                             </label>
                         </div>
                         <div class="row mb-3">
@@ -820,8 +934,7 @@
                                 <strong>归经：</strong>
                             </label>
                             <label>
-                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64"
-                                          th:field="*{channelTropism}"></textarea>
+                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64" th:field="*{channelTropism}"></textarea>
                             </label>
                         </div>
                         <div class="row mb-3">
@@ -829,8 +942,7 @@
                                 <strong>功效：</strong>
                             </label>
                             <label>
-                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64"
-                                          th:field="*{efficacy}"></textarea>
+                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64" th:field="*{efficacy}"></textarea>
                             </label>
                         </div>
                         <div class="row mb-3">
@@ -838,8 +950,7 @@
                                 <strong>临床应用：</strong>
                             </label>
                             <label>
-                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64"
-                                          th:field="*{clinicalApplication}"></textarea>
+                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64" th:field="*{clinicalApplication}"></textarea>
                             </label>
                         </div>
                         <div class="row mb-3">
@@ -847,8 +958,7 @@
                                 <strong>现代医学药理研究：</strong>
                             </label>
                             <label>
-                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64"
-                                          th:field="*{mmpResearch}"></textarea>
+                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64" th:field="*{mmpResearch}"></textarea>
                             </label>
                         </div>
                         <div class="row mb-3">
@@ -856,23 +966,22 @@
                                 <strong>药性：</strong>
                             </label>
                             <div class="col-md-6" th:each="mdcProp, status : *{properties}">
-                                <div style="float: left; width: 20%; text-align: left;"
-                                     th:text="${mdcProp.kind.valueZhCn}"></div>
+                                <div style="float: left; width: 20%; text-align: left;" th:text="${mdcProp.kind.valueZhCn}"></div>
                                 <div style="float: left; width: 60%;">
                                     <label style="width: 100%">
-                                        <input th:id="${mdcProp.kind}"
+                                        <input class="form-range"
+                                               type="range"
+                                               min="0"
+                                               max="10"
+                                               step="1"
+                                               th:id="${mdcProp.kind}"
                                                th:field="*{properties[__${status.index}__].level}"
                                                th:value="${mdcProp.level} != null ? ${mdcProp.level} : 0"
-                                               type="range"
-                                               class="form-range" min="0" max="10"
-                                               step="1"
                                                th:onchange="updateMdcPropKindSpanValue(this.id, this.value)">
                                     </label>
                                 </div>
-                                <span th:id="'span_' + ${mdcProp.kind}"
-                                      style="float: left; width: 15%; margin-left: 5%;"
-                                      th:text="${mdcProp.level} != null ? ${mdcProp.level} : 0"></span>
-                                <input type="hidden" th:field="*{properties[__${status.index}__].kind}"/>
+                                <span style="float: left; width: 15%; margin-left: 5%;" th:id="${mdcProp.kind + 'Span'}" th:text="${mdcProp.level} != null ? ${mdcProp.level} : 0"></span>
+                                <input type="hidden" th:id="${mdcProp.kind + 'Hidden'}" th:field="*{properties[__${status.index}__].kind}"/>
                             </div>
                         </div>
                     </div>
@@ -886,7 +995,116 @@
             </div>
         </div>
     </div>
-    <div class="modal fade" id="delete_medicine_modal">
+    <div class="modal fade" id="editMedicineModal">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <strong class="fas fa-user-edit me-2">编辑药材</strong>
+                    </h5>
+                    <button type="button" class="btn-close" aria-label="Close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="editMedicineForm" method="PUT" th:action="@{/medicines}" th:object="${editMedicineDTO}" autocomplete="off">
+                    <div class="modal-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    <strong>药材名：</strong>
+                                </label>
+                                <label>
+                                    <input type="text" class="form-control" id="editName" th:field="*{name}" style="background-color: #f5f5f5; color: #666; cursor: not-allowed;">
+                                </label>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <strong class="col-md-2 col-form-label">一级分类：</strong>
+                            <div class="col-md-4">
+                                <select id="editFirstLevelInput" class="form-select" aria-label="一级分类" onchange="updateEditSecondLevelInput()" th:field="*{firstCategory}">
+                                    <option th:each="category : ${mdcCategories.keySet()}" th:selected="${category == '暂未归类'}" th:value="${category}" th:text="${category}"></option>
+                                </select>
+                            </div>
+                            <strong class="col-md-2 col-form-label">二级分类：</strong>
+                            <div class="col-md-4">
+                                <select id="editSecondLevelInput" class="form-select" aria-label="二级分类" th:field="*{secondCategory}">
+                                    <option selected th:value="${mdcCategories.get('暂未归类')}" th:text="${mdcCategories.get('暂未归类')}"></option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label class="form-label">
+                                <strong>性味：</strong>
+                            </label>
+                            <label>
+                                <textarea id="editNatureAndFlavor" class="form-control" rows="3" placeholder="请输入..." maxlength="64" th:field="*{natureAndFlavor}"></textarea>
+                            </label>
+                        </div>
+                        <div class="row mb-3">
+                            <label class="form-label">
+                                <strong>归经：</strong>
+                            </label>
+                            <label>
+                                <textarea id="editChannelTropism" class="form-control" rows="3" placeholder="请输入..." maxlength="64" th:field="*{channelTropism}"></textarea>
+                            </label>
+                        </div>
+                        <div class="row mb-3">
+                            <label class="form-label">
+                                <strong>功效：</strong>
+                            </label>
+                            <label>
+                                <textarea id="editEfficacy" class="form-control" rows="3" placeholder="请输入..." maxlength="64" th:field="*{efficacy}"></textarea>
+                            </label>
+                        </div>
+                        <div class="row mb-3">
+                            <label class="form-label">
+                                <strong>临床应用：</strong>
+                            </label>
+                            <label>
+                                <textarea id="editClinicalApplication" class="form-control" rows="3" placeholder="请输入..." maxlength="64" th:field="*{clinicalApplication}"></textarea>
+                            </label>
+                        </div>
+                        <div class="row mb-3">
+                            <label class="form-label">
+                                <strong>现代医学药理研究：</strong>
+                            </label>
+                            <label>
+                                <textarea id="editMmpResearch" class="form-control" rows="3" placeholder="请输入..." maxlength="64" th:field="*{mmpResearch}"></textarea>
+                            </label>
+                        </div>
+                        <div class="row mb-3">
+                            <label class="form-label">
+                                <strong>药性：</strong>
+                            </label>
+                            <div class="col-md-6" th:each="mdcProp, status : *{properties}">
+                                <div style="float: left; width: 20%; text-align: left;" th:text="${mdcProp.kind.valueZhCn}"></div>
+                                <div style="float: left; width: 60%;">
+                                    <label style="width: 100%">
+                                        <input class="form-range"
+                                               type="range"
+                                               min="0"
+                                               max="10"
+                                               step="1"
+                                               th:id="${'edit' + mdcProp.kind}"
+                                               th:field="*{properties[__${status.index}__].level}"
+                                               th:value="${mdcProp.level} != null ? ${mdcProp.level} : 0"
+                                               th:onchange="updateMdcPropKindSpanValue(this.id, this.value)">
+                                    </label>
+                                </div>
+                                <span style="float: left; width: 15%; margin-left: 5%;" th:id="${'edit' + mdcProp.kind + 'Span'}" th:text="${mdcProp.level} != null ? ${mdcProp.level} : 0"></span>
+                                <input type="hidden" th:id="${'edit' + mdcProp.kind + 'Hidden'}" th:field="*{properties[__${status.index}__].kind}"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            取消
+                        </button>
+                        <button type="submit" class="btn btn-primary" data-bs-dismiss="modal">修改</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="deleteMedicineModal">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -897,7 +1115,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                    <form th:action="@{/medicines}" th:method="DELETE" id="delete_medicines_form">
+                    <form th:action="@{/medicines}" th:method="DELETE" id="deleteMedicinesForm">
                         <input type="hidden" id="deleteMedicines" name="ids">
                         <button type="submit" class="btn btn-danger" data-bs-dismiss="modal">确认</button>
                     </form>
@@ -905,20 +1123,16 @@
             </div>
         </div>
     </div>
-    <div class="modal fade" id="submit_prescription_modal">
+    <div class="modal fade" id="submitPrescriptionModal">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <strong class="fas fa-user-edit me-2" id="submit_prescription_modal_title">
-                            药方详情
-                        </strong>
+                        <strong class="fas fa-user-edit me-2">药方详情</strong>
                     </h5>
-                    <button type="button" class="btn-close" aria-label="Close"
-                            data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" aria-label="Close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="submit_prescription_form" method="POST" th:action="@{/prescriptions}"
-                      th:object="${prescriptionDTO}" autocomplete="off">
+                <form id="submitPrescriptionForm" method="POST" th:action="@{/prescriptions}" th:object="${prescriptionDTO}" autocomplete="off">
                     <div class="modal-body">
                         <div class="row mb-3">
                             <div class="col-md-6">
@@ -926,8 +1140,7 @@
                                     <strong>药方名：</strong>
                                 </label>
                                 <label>
-                                    <input type="text" class="form-control" placeholder="请输入..." required
-                                           minlength="1" maxlength="32" th:field="*{prescriptionName}">
+                                    <input type="text" class="form-control" placeholder="请输入..." maxlength="32" th:field="*{prescriptionName}">
                                 </label>
                             </div>
                         </div>
@@ -936,8 +1149,7 @@
                                 <strong>药方描述：</strong>
                             </label>
                             <label>
-                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64"
-                                          th:field="*{prescriptionDesc}"></textarea>
+                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64" th:field="*{prescriptionDesc}"></textarea>
                             </label>
                         </div>
                         <div>
@@ -945,7 +1157,22 @@
                                 <strong>药材列表：</strong>
                             </label>
                             <table class="table table-bordered border-dark table-striped table-hover align-middle text-nowrap">
-                                <thead></thead>
+                                <thead>
+                                <tr>
+                                    <th style="text-align: center; vertical-align: middle; min-width: 50px; background-color: #EDE2C9;">
+                                        序号
+                                    </th>
+                                    <th style="text-align: center; vertical-align: middle; min-width: 150px; background-color: #EDE2C9;">
+                                        药材名
+                                    </th>
+                                    <th style="text-align: center; vertical-align: middle; min-width: 100px;background-color: #EDE2C9;">
+                                        克数<br/>
+                                    </th>
+                                    <th style="text-align: center; vertical-align: middle; min-width: 80px;background-color: #EDE2C9;">
+                                        权重<br/>
+                                    </th>
+                                </tr>
+                                </thead>
                                 <tbody id="prescriptionTableBody"></tbody>
                             </table>
                         </div>
@@ -960,8 +1187,7 @@
             </div>
         </div>
     </div>
-    <div class="toast-container" id="toastContainer"
-         style="position: fixed; top: 100px; right: 20px; z-index: 1055; min-width: 300px;"></div>
+    <div class="toast-container" id="toastContainer" style="position: fixed; top: 100px; right: 20px; z-index: 1055; min-width: 300px;"></div>
 </div>
 <!-- 底部 -->
 <footer>
