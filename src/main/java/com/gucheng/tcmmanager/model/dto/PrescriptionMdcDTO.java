@@ -16,6 +16,30 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class PrescriptionMdcDTO {
     private String name;
-    private double gram;
-    private double weight;
+    private Double gram;
+    private Double weight;
+
+    public String getFormattedGram() {
+        return getFormattedValue(this.gram);
+    }
+
+    public String getFormattedWeight() {
+        return getFormattedValue(this.weight);
+    }
+
+    private String getFormattedValue(Double value) {
+        if (value == null) {
+            return "";
+        }
+
+        if (value % 1 == 0) {
+            return String.valueOf(value.intValue());
+        } else {
+            String formatted = String.format("%.3f", value);
+            if (formatted.contains(".")) {
+                formatted = formatted.replaceAll("0*$", "").replaceAll("\\.$", "");
+            }
+            return formatted;
+        }
+    }
 }

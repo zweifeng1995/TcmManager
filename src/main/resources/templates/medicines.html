@@ -277,11 +277,12 @@
                         });
                     },
                     error: function (xhr, status, error) {
-                        let errorMsg = "未知错误。";
-                        if (xhr != null && xhr.responseJSON != null && xhr.responseJSON.message != null) {
-                            errorMsg = xhr.responseJSON.message;
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            showToast('error', "添加药材失败！\n失败原因：" + response.message, "操作失败");
+                        } catch (e) {
+                            showToast('error', "添加药材失败！\n失败原因：未知错误", "操作失败");
                         }
-                        showToast("error", "添加药材失败！\n失败原因：" + errorMsg, "操作失败");
                     },
                     complete: function () {
                     }
@@ -305,11 +306,12 @@
                         editMedicineForm.reset();
                     },
                     error: function (xhr, status, error) {
-                        let errorMsg = "未知错误。";
-                        if (xhr != null && xhr.responseJSON != null && xhr.responseJSON.message != null) {
-                            errorMsg = xhr.responseJSON.message;
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            showToast('error', "修改药材失败！\n失败原因：" + response.message, "操作失败");
+                        } catch (e) {
+                            showToast('error', "修改药材失败！\n失败原因：未知错误", "操作失败");
                         }
-                        showToast("error", "修改药材失败！\n失败原因：" + errorMsg, "操作失败");
                     },
                     complete: function () {
                     }
@@ -334,11 +336,12 @@
                         refreshMedicinesTable();
                     },
                     error: function (xhr, status, error) {
-                        let errorMsg = "未知错误。";
-                        if (xhr != null && xhr.responseJSON != null && xhr.responseJSON.message != null) {
-                            errorMsg = xhr.responseJSON.message;
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            showToast('error', "删除药材失败！\n失败原因：" + response.message, "操作失败");
+                        } catch (e) {
+                            showToast('error', "删除药材失败！\n失败原因：未知错误", "操作失败");
                         }
-                        showToast('error', "删除药材失败！\n失败原因：" + errorMsg, "操作失败");
                     },
                     complete: function () {
                     }
@@ -360,11 +363,12 @@
                         showToast("success", "药方添加成功！", "操作成功");
                     },
                     error: function (xhr, status, error) {
-                        let errorMsg = "未知错误。";
-                        if (xhr != null && xhr.responseJSON != null && xhr.responseJSON.message != null) {
-                            errorMsg = xhr.responseJSON.message;
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            showToast('error', "药方添加失败！\n失败原因：" + response.message, "操作失败");
+                        } catch (e) {
+                            showToast('error', "药方添加失败！\n失败原因：未知错误", "操作失败");
                         }
-                        showToast('error', "药方添加失败！\n失败原因：" + errorMsg, "操作失败!");
                     },
                     complete: function () {
                     }
@@ -587,23 +591,25 @@
                 <h2 class="fw-bold text-center">药材列表</h2>
                 <div class="container-fluid rounded border border-1">
                     <div class="row my-3">
-                        <div class="col-3 align-middle">
+                        <div class="col-3 align-middle text-nowrap">
                             <div class="row">
                                 <label for="queryMdcName" class="col-3 col-form-label">
                                     <strong>名称：</strong>
                                 </label>
                                 <div class="col-9">
-                                    <input type="text" class="form-control" name="queryMdcName" id="queryMdcName" placeholder="请输入..."/>
+                                    <input type="text" class="form-control" name="queryMdcName" id="queryMdcName"
+                                           placeholder="请输入..."/>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-3 align-middle">
+                        <div class="col-3 align-middle text-nowrap">
                             <div class="row">
                                 <label for="queryClinicalApplication" class="col-4 col-form-label">
                                     <strong>临床应用：</strong>
                                 </label>
                                 <div class="col-8">
-                                    <input type="text" class="form-control" name="queryClinicalApplication" id="queryClinicalApplication" placeholder="请输入..."/>
+                                    <input type="text" class="form-control" name="queryClinicalApplication"
+                                           id="queryClinicalApplication" placeholder="请输入..."/>
                                 </div>
                             </div>
                         </div>
@@ -611,59 +617,73 @@
                         <div class="col-3"></div>
                     </div>
                     <div class="row my-3">
-                        <div class="col-3 align-middle">
+                        <div class="col-3 align-middle text-nowrap">
                             <div class="row">
                                 <label for="queryNatureAndFlavor" class="col-3 col-form-label">
                                     <strong>性味：</strong>
                                 </label>
                                 <div class="col-9">
-                                    <input type="text" class="form-control" name="queryNatureAndFlavor" id="queryNatureAndFlavor" placeholder="请输入..."/>
+                                    <input type="text" class="form-control" name="queryNatureAndFlavor"
+                                           id="queryNatureAndFlavor" placeholder="请输入..."/>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-3 align-middle">
+                        <div class="col-3 align-middle text-nowrap">
                             <div class="row">
-                                <label for="queryChannelTropism" class="col-3 col-form-label">
+                                <label for="queryChannelTropism" class="col-4 col-form-label">
                                     <strong>归经：</strong>
                                 </label>
-                                <div class="col-9">
-                                    <input type="text" class="form-control" name="queryChannelTropism" id="queryChannelTropism" placeholder="请输入..."/>
+                                <div class="col-8">
+                                    <input type="text" class="form-control" name="queryChannelTropism"
+                                           id="queryChannelTropism" placeholder="请输入..."/>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-3 align-middle">
+                        <div class="col-3 align-middle text-nowrap">
                             <div class="row">
                                 <label for="queryEfficacy" class="col-4 col-form-label">
                                     <strong>功效：</strong>
                                 </label>
                                 <div class="col-8">
-                                    <input type="text" class="form-control" name="queryEfficacy" id="queryEfficacy" placeholder="请输入..."/>
+                                    <input type="text" class="form-control" name="queryEfficacy" id="queryEfficacy"
+                                           placeholder="请输入..."/>
                                 </div>
                             </div>
                         </div>
                         <div class="col-3"></div>
                     </div>
                     <div class="row my-3">
-                        <div class="col-9">
+                        <div class="col-3 align-middle text-nowrap">
                             <div class="row">
-                                <strong class="col-1 col-form-label">一级分类：</strong>
-                                <div class="col-5 d-flex">
-                                    <select id="queryFirstLevel" class="form-select" aria-label="一级分类" onchange="updateQuerySecondLevel()">
+                                <label for="queryMdcName" class="col-3 col-form-label">
+                                    <strong>一级分类：</strong>
+                                </label>
+                                <div class="col-9">
+                                    <select id="queryFirstLevel" class="form-select" aria-label="一级分类"
+                                            onchange="updateQuerySecondLevel()">
                                         <option selected value="">全选</option>
-                                        <option th:each="category : ${mdcCategories.keySet()}" th:value="${category}" th:text="${category}"></option>
+                                        <option th:each="category : ${mdcCategories.keySet()}"
+                                                th:value="${category}" th:text="${category}"></option>
                                     </select>
                                 </div>
-                                <strong class="col-1 col-form-label">二级分类：</strong>
-                                <div class="col-5 d-flex">
+                            </div>
+                        </div>
+                        <div class="col-3 align-middle text-nowrap">
+                            <div class="row">
+                                <label for="queryClinicalApplication" class="col-4 col-form-label">
+                                    <strong>二级分类：</strong>
+                                </label>
+                                <div class="col-8">
                                     <select id="querySecondLevel" class="form-select" aria-label="二级分类">
                                         <option selected value="">全选</option>
                                     </select>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-2"></div>
-                        <div class="col-1">
-                            <button type="button" class="btn btn-primary" style="width: 100%;" onclick="refreshMedicinesTable()">查询
+                        <div class="col-5"></div>
+                        <div class="col-1 align-middle text-nowrap">
+                            <button type="button" class="btn btn-primary" style="width: 100%;"
+                                    onclick="refreshMedicinesTable()">查询
                             </button>
                         </div>
                     </div>
@@ -674,8 +694,11 @@
         <div class="row my-3">
             <div class="col-12">
                 <div class="container-flex">
-                    <button type="button" class="btn btn-primary" onclick="openSubmitMedicineModal()">添加药材信息</button>
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#deleteMedicineModal">批量删除</button>
+                    <button type="button" class="btn btn-primary" onclick="openSubmitMedicineModal()">添加药材信息
+                    </button>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                            data-bs-target="#deleteMedicineModal">批量删除
+                    </button>
                 </div>
             </div>
         </div>
@@ -844,25 +867,24 @@
                         <h4 class="panel-title fw-bold text-center">药性计算面板</h4>
                     </div>
                     <div class="panel-body">
-                        <div class="container-fluid overflow-auto mb-3"
-                             style="max-height: 600px">
+                        <div class="container-fluid overflow-auto mb-3" style="max-height: 600px;">
                             <table class="table table-bordered border-dark table-striped table-hover align-middle text-nowrap"
-                                   id="calculationTable">
+                                   id="calculationTable" style="width: 100%;">
                                 <thead>
                                 <tr>
-                                    <th style="text-align: center; vertical-align: middle; min-width: 50px; background-color: #EDE2C9;">
+                                    <th style="text-align: center; vertical-align: middle; width: 50px; min-width: 50px; background-color: #EDE2C9;">
                                         序号
                                     </th>
-                                    <th style="text-align: center; vertical-align: middle; min-width: 150px; background-color: #EDE2C9;">
+                                    <th style="text-align: center; vertical-align: middle; width: 150px; min-width: 150px; background-color: #EDE2C9;">
                                         药材名
                                     </th>
-                                    <th style="text-align: center; vertical-align: middle; min-width: 100px;background-color: #EDE2C9;">
+                                    <th style="text-align: center; vertical-align: middle; width: 100px; min-width: 100px;background-color: #EDE2C9;">
                                         克数<br/>(单位:g)
                                     </th>
-                                    <th style="text-align: center; vertical-align: middle; min-width: 80px;background-color: #EDE2C9;">
+                                    <th style="text-align: center; vertical-align: middle; width: 100px; min-width: 100px; background-color: #EDE2C9;">
                                         权重<br/>(1-10)
                                     </th>
-                                    <th style="text-align: center; vertical-align: middle; min-width: 50px; background-color: #EDE2C9;">
+                                    <th style="text-align: center; vertical-align: middle; width: 50px; min-width: 50px; background-color: #EDE2C9;">
                                         操作
                                     </th>
                                 </tr>
@@ -895,7 +917,8 @@
                     </h5>
                     <button type="button" class="btn-close" aria-label="Close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="submitMedicineForm" method="POST" th:action="@{/medicines}" th:object="${submitMedicineDTO}" autocomplete="off">
+                <form id="submitMedicineForm" method="POST" th:action="@{/medicines}" th:object="${submitMedicineDTO}"
+                      autocomplete="off">
                     <div class="modal-body">
                         <div class="row mb-3">
                             <div class="col-md-6">
@@ -903,21 +926,27 @@
                                     <strong>药材名：</strong>
                                 </label>
                                 <label>
-                                    <input type="text" class="form-control" placeholder="请输入..." th:field="*{name}">
+                                    <input type="text" class="form-control" placeholder="请输入..." maxlength="32"
+                                           th:field="*{name}">
                                 </label>
                             </div>
                         </div>
                         <div class="row mb-3">
                             <strong class="col-md-2 col-form-label">一级分类：</strong>
                             <div class="col-md-4">
-                                <select id="firstLevelInput" class="form-select" aria-label="一级分类" onchange="updateSecondLevelInput()" name="firstCategory">
-                                    <option th:each="category : ${mdcCategories.keySet()}" th:selected="${category == '暂未归类'}" th:value="${category}" th:text="${category}"></option>
+                                <select id="firstLevelInput" class="form-select" aria-label="一级分类"
+                                        onchange="updateSecondLevelInput()" name="firstCategory">
+                                    <option th:each="category : ${mdcCategories.keySet()}"
+                                            th:selected="${category == '暂未归类'}" th:value="${category}"
+                                            th:text="${category}"></option>
                                 </select>
                             </div>
                             <strong class="col-md-2 col-form-label">二级分类：</strong>
                             <div class="col-md-4">
-                                <select id="secondLevelInput" class="form-select" aria-label="二级分类" th:field="*{secondCategory}">
-                                    <option selected th:value="${mdcCategories.get('暂未归类')}" th:text="${mdcCategories.get('暂未归类')[0]}"></option>
+                                <select id="secondLevelInput" class="form-select" aria-label="二级分类"
+                                        th:field="*{secondCategory}">
+                                    <option selected th:value="${mdcCategories.get('暂未归类')}"
+                                            th:text="${mdcCategories.get('暂未归类')[0]}"></option>
                                 </select>
                             </div>
                         </div>
@@ -926,7 +955,8 @@
                                 <strong>性味：</strong>
                             </label>
                             <label>
-                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64" th:field="*{natureAndFlavor}"></textarea>
+                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="2048"
+                                          th:field="*{natureAndFlavor}"></textarea>
                             </label>
                         </div>
                         <div class="row mb-3">
@@ -934,7 +964,8 @@
                                 <strong>归经：</strong>
                             </label>
                             <label>
-                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64" th:field="*{channelTropism}"></textarea>
+                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="2048"
+                                          th:field="*{channelTropism}"></textarea>
                             </label>
                         </div>
                         <div class="row mb-3">
@@ -942,7 +973,8 @@
                                 <strong>功效：</strong>
                             </label>
                             <label>
-                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64" th:field="*{efficacy}"></textarea>
+                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="2048"
+                                          th:field="*{efficacy}"></textarea>
                             </label>
                         </div>
                         <div class="row mb-3">
@@ -950,7 +982,8 @@
                                 <strong>临床应用：</strong>
                             </label>
                             <label>
-                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64" th:field="*{clinicalApplication}"></textarea>
+                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="2048"
+                                          th:field="*{clinicalApplication}"></textarea>
                             </label>
                         </div>
                         <div class="row mb-3">
@@ -958,7 +991,8 @@
                                 <strong>现代医学药理研究：</strong>
                             </label>
                             <label>
-                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64" th:field="*{mmpResearch}"></textarea>
+                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="2048"
+                                          th:field="*{mmpResearch}"></textarea>
                             </label>
                         </div>
                         <div class="row mb-3">
@@ -966,7 +1000,8 @@
                                 <strong>药性：</strong>
                             </label>
                             <div class="col-md-6" th:each="mdcProp, status : *{properties}">
-                                <div style="float: left; width: 20%; text-align: left;" th:text="${mdcProp.kind.valueZhCn}"></div>
+                                <div style="float: left; width: 20%; text-align: left;"
+                                     th:text="${mdcProp.kind.valueZhCn}"></div>
                                 <div style="float: left; width: 60%;">
                                     <label style="width: 100%">
                                         <input class="form-range"
@@ -980,8 +1015,10 @@
                                                th:onchange="updateMdcPropKindSpanValue(this.id, this.value)">
                                     </label>
                                 </div>
-                                <span style="float: left; width: 15%; margin-left: 5%;" th:id="${mdcProp.kind + 'Span'}" th:text="${mdcProp.level} != null ? ${mdcProp.level} : 0"></span>
-                                <input type="hidden" th:id="${mdcProp.kind + 'Hidden'}" th:field="*{properties[__${status.index}__].kind}"/>
+                                <span style="float: left; width: 15%; margin-left: 5%;" th:id="${mdcProp.kind + 'Span'}"
+                                      th:text="${mdcProp.level} != null ? ${mdcProp.level} : 0"></span>
+                                <input type="hidden" th:id="${mdcProp.kind + 'Hidden'}"
+                                       th:field="*{properties[__${status.index}__].kind}"/>
                             </div>
                         </div>
                     </div>
@@ -1004,7 +1041,8 @@
                     </h5>
                     <button type="button" class="btn-close" aria-label="Close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="editMedicineForm" method="PUT" th:action="@{/medicines}" th:object="${editMedicineDTO}" autocomplete="off">
+                <form id="editMedicineForm" method="PUT" th:action="@{/medicines}" th:object="${editMedicineDTO}"
+                      autocomplete="off">
                     <div class="modal-body">
                         <div class="row mb-3">
                             <div class="col-md-6">
@@ -1012,21 +1050,27 @@
                                     <strong>药材名：</strong>
                                 </label>
                                 <label>
-                                    <input type="text" class="form-control" id="editName" th:field="*{name}" style="background-color: #f5f5f5; color: #666; cursor: not-allowed;">
+                                    <input type="text" class="form-control" id="editName" th:field="*{name}"
+                                           style="background-color: #f5f5f5; color: #666; cursor: not-allowed;">
                                 </label>
                             </div>
                         </div>
                         <div class="row mb-3">
                             <strong class="col-md-2 col-form-label">一级分类：</strong>
                             <div class="col-md-4">
-                                <select id="editFirstLevelInput" class="form-select" aria-label="一级分类" onchange="updateEditSecondLevelInput()" th:field="*{firstCategory}">
-                                    <option th:each="category : ${mdcCategories.keySet()}" th:selected="${category == '暂未归类'}" th:value="${category}" th:text="${category}"></option>
+                                <select id="editFirstLevelInput" class="form-select" aria-label="一级分类"
+                                        onchange="updateEditSecondLevelInput()" th:field="*{firstCategory}">
+                                    <option th:each="category : ${mdcCategories.keySet()}"
+                                            th:selected="${category == '暂未归类'}" th:value="${category}"
+                                            th:text="${category}"></option>
                                 </select>
                             </div>
                             <strong class="col-md-2 col-form-label">二级分类：</strong>
                             <div class="col-md-4">
-                                <select id="editSecondLevelInput" class="form-select" aria-label="二级分类" th:field="*{secondCategory}">
-                                    <option selected th:value="${mdcCategories.get('暂未归类')}" th:text="${mdcCategories.get('暂未归类')}"></option>
+                                <select id="editSecondLevelInput" class="form-select" aria-label="二级分类"
+                                        th:field="*{secondCategory}">
+                                    <option selected th:value="${mdcCategories.get('暂未归类')}"
+                                            th:text="${mdcCategories.get('暂未归类')}"></option>
                                 </select>
                             </div>
                         </div>
@@ -1035,7 +1079,8 @@
                                 <strong>性味：</strong>
                             </label>
                             <label>
-                                <textarea id="editNatureAndFlavor" class="form-control" rows="3" placeholder="请输入..." maxlength="64" th:field="*{natureAndFlavor}"></textarea>
+                                <textarea id="editNatureAndFlavor" class="form-control" rows="3" placeholder="请输入..."
+                                          maxlength="64" th:field="*{natureAndFlavor}"></textarea>
                             </label>
                         </div>
                         <div class="row mb-3">
@@ -1043,7 +1088,8 @@
                                 <strong>归经：</strong>
                             </label>
                             <label>
-                                <textarea id="editChannelTropism" class="form-control" rows="3" placeholder="请输入..." maxlength="64" th:field="*{channelTropism}"></textarea>
+                                <textarea id="editChannelTropism" class="form-control" rows="3" placeholder="请输入..."
+                                          maxlength="64" th:field="*{channelTropism}"></textarea>
                             </label>
                         </div>
                         <div class="row mb-3">
@@ -1051,7 +1097,8 @@
                                 <strong>功效：</strong>
                             </label>
                             <label>
-                                <textarea id="editEfficacy" class="form-control" rows="3" placeholder="请输入..." maxlength="64" th:field="*{efficacy}"></textarea>
+                                <textarea id="editEfficacy" class="form-control" rows="3" placeholder="请输入..."
+                                          maxlength="64" th:field="*{efficacy}"></textarea>
                             </label>
                         </div>
                         <div class="row mb-3">
@@ -1059,7 +1106,9 @@
                                 <strong>临床应用：</strong>
                             </label>
                             <label>
-                                <textarea id="editClinicalApplication" class="form-control" rows="3" placeholder="请输入..." maxlength="64" th:field="*{clinicalApplication}"></textarea>
+                                <textarea id="editClinicalApplication" class="form-control" rows="3"
+                                          placeholder="请输入..." maxlength="64"
+                                          th:field="*{clinicalApplication}"></textarea>
                             </label>
                         </div>
                         <div class="row mb-3">
@@ -1067,7 +1116,8 @@
                                 <strong>现代医学药理研究：</strong>
                             </label>
                             <label>
-                                <textarea id="editMmpResearch" class="form-control" rows="3" placeholder="请输入..." maxlength="64" th:field="*{mmpResearch}"></textarea>
+                                <textarea id="editMmpResearch" class="form-control" rows="3" placeholder="请输入..."
+                                          maxlength="64" th:field="*{mmpResearch}"></textarea>
                             </label>
                         </div>
                         <div class="row mb-3">
@@ -1075,7 +1125,8 @@
                                 <strong>药性：</strong>
                             </label>
                             <div class="col-md-6" th:each="mdcProp, status : *{properties}">
-                                <div style="float: left; width: 20%; text-align: left;" th:text="${mdcProp.kind.valueZhCn}"></div>
+                                <div style="float: left; width: 20%; text-align: left;"
+                                     th:text="${mdcProp.kind.valueZhCn}"></div>
                                 <div style="float: left; width: 60%;">
                                     <label style="width: 100%">
                                         <input class="form-range"
@@ -1089,8 +1140,11 @@
                                                th:onchange="updateMdcPropKindSpanValue(this.id, this.value)">
                                     </label>
                                 </div>
-                                <span style="float: left; width: 15%; margin-left: 5%;" th:id="${'edit' + mdcProp.kind + 'Span'}" th:text="${mdcProp.level} != null ? ${mdcProp.level} : 0"></span>
-                                <input type="hidden" th:id="${'edit' + mdcProp.kind + 'Hidden'}" th:field="*{properties[__${status.index}__].kind}"/>
+                                <span style="float: left; width: 15%; margin-left: 5%;"
+                                      th:id="${'edit' + mdcProp.kind + 'Span'}"
+                                      th:text="${mdcProp.level} != null ? ${mdcProp.level} : 0"></span>
+                                <input type="hidden" th:id="${'edit' + mdcProp.kind + 'Hidden'}"
+                                       th:field="*{properties[__${status.index}__].kind}"/>
                             </div>
                         </div>
                     </div>
@@ -1132,7 +1186,8 @@
                     </h5>
                     <button type="button" class="btn-close" aria-label="Close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="submitPrescriptionForm" method="POST" th:action="@{/prescriptions}" th:object="${prescriptionDTO}" autocomplete="off">
+                <form id="submitPrescriptionForm" method="POST" th:action="@{/prescriptions}"
+                      th:object="${prescriptionDTO}" autocomplete="off">
                     <div class="modal-body">
                         <div class="row mb-3">
                             <div class="col-md-6">
@@ -1140,7 +1195,8 @@
                                     <strong>药方名：</strong>
                                 </label>
                                 <label>
-                                    <input type="text" class="form-control" placeholder="请输入..." maxlength="32" th:field="*{prescriptionName}">
+                                    <input type="text" class="form-control" placeholder="请输入..." maxlength="32"
+                                           th:field="*{prescriptionName}">
                                 </label>
                             </div>
                         </div>
@@ -1149,7 +1205,8 @@
                                 <strong>药方描述：</strong>
                             </label>
                             <label>
-                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="64" th:field="*{prescriptionDesc}"></textarea>
+                                <textarea class="form-control" rows="3" placeholder="请输入..." maxlength="2048"
+                                          th:field="*{prescriptionDesc}"></textarea>
                             </label>
                         </div>
                         <div>
@@ -1187,7 +1244,8 @@
             </div>
         </div>
     </div>
-    <div class="toast-container" id="toastContainer" style="position: fixed; top: 100px; right: 20px; z-index: 1055; min-width: 300px;"></div>
+    <div class="toast-container" id="toastContainer"
+         style="position: fixed; top: 100px; right: 20px; z-index: 1055; min-width: 300px;"></div>
 </div>
 <!-- 底部 -->
 <footer>

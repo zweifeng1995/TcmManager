@@ -38,7 +38,7 @@ public class PrescriptionDao {
 
         List<PrescriptionMdcEntity> prescriptionMdcEntityList = new ArrayList<>();
         prescriptionDTO.getPrescriptionMedicines().forEach(prescriptionMdc -> {
-            System.out.println(prescriptionMdc);
+
             PrescriptionMdcEntity prescriptionMdcEntity = new PrescriptionMdcEntity();
             prescriptionMdcEntity.setMedicineEntity(medicineRepo.findByName(prescriptionMdc.getName()));
             prescriptionMdcEntity.setGram(prescriptionMdc.getGram());

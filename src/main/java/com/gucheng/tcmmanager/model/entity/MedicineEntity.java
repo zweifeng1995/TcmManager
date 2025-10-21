@@ -36,7 +36,7 @@ public class MedicineEntity {
     @Column(name = "second_category", nullable = false, length = 16)
     private String secondCategory; // 二级分类
 
-    @Column(name = "mmp_research", nullable = false, length = 64)
+    @Column(name = "mmp_research", nullable = false, length = 2048)
     private String mmpResearch; // 现代医学药理研究
 
     @Column(name = "created_time", nullable = false)

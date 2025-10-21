@@ -34,7 +34,7 @@ public class PrescriptionEntity {
     @Column(name = "name", nullable = false, unique = true, length = 32)
     private String name; // 药方名
 
-    @Column(name = "description", length = 64)
+    @Column(name = "description", length = 2048)
     private String description; // 药方描述
 
     @Column(name = "created_time", nullable = false)

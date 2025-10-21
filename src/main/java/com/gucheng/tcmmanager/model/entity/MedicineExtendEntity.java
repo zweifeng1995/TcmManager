@@ -37,16 +37,16 @@ public class MedicineExtendEntity {
     @EqualsAndHashCode.Exclude
     private MedicineEntity medicineEntity; // 外键，中药ID
 
-    @Column(name = "nature_and_flavor", length = 64)
+    @Column(name = "nature_and_flavor", length = 2048)
     private String natureAndFlavor; // 性味
 
-    @Column(name = "channel_tropism", length = 64)
+    @Column(name = "channel_tropism", length = 2048)
     private String channelTropism; // 归经
 
-    @Column(name = "efficacy", length = 64)
+    @Column(name = "efficacy", length = 2048)
     private String efficacy; // 功效
 
-    @Column(name = "clinical_application", length = 64)
+    @Column(name = "clinical_application", length = 2048)
     private String clinicalApplication; // 临床应用
 
     @Column(name = "created_time", nullable = false)
