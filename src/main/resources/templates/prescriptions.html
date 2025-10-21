@@ -151,13 +151,14 @@
                             th:data-id="${prescriptionDTO.getPrescriptionId()}"
                             data-bs-target="#deleteConfirmModal"></button>
                     <div class="card-body">
-                        <h3 class="card-title text-success">
+                        <h3 class="card-title text-success ">
                             <strong th:text="${prescriptionDTO.getPrescriptionName()}"></strong>
                         </h3>
-                        <p class="card-text overflow-auto" style="max-height: 80px;"
-                           th:text="'药方描述：' + ${prescriptionDTO.getPrescriptionDesc()}"></p>
-                        <h6 class="mt-3 border-bottom pb-1">组成药材:</h6>
-                        <ul class="list-group list-group-flush herb-list">
+                        <h6 class="mt-3 pb-1 fw-bold text-nowrap">药方描述: </h6>
+                        <p class="card-text d-flex overflow-auto border-bottom" style="max-height: 100px; height: 100px;"
+                           th:text="${prescriptionDTO.getPrescriptionDesc()}"></p>
+                        <h6 class="mt-3 pb-1 fw-bold text-nowrap">组成药材:</h6>
+                        <ul class="list-group list-group-flush herb-list border-bottom" style="max-height: 200px; height: 200px;">
                             <li class="list-group-item d-flex"
                                 th:each="medicine, status: ${prescriptionDTO.getPrescriptionMedicines()}">
                                 <img style="height: 24px; width: 24px" src="/img/medicine.png"/>
@@ -165,8 +166,9 @@
                                 <span th:text="${', ' + medicine.getFormattedGram() + ' 克'}"></span>
                             </li>
                         </ul>
+                        <h6 class="mt-3 pb-1 fw-bold text-nowrap">药性汇总:</h6>
                         <div class="table-responsive">
-                            <table class="table table-bordered border-dark align-middle text-nowrap mt-3 mb-0">
+                            <table class="table table-bordered border-dark align-middle text-nowrap mt-0 mb-0">
                                 <thead>
                                 <tr>
                                     <th style="text-align: center; background-color: #8793B0; color: white;"
