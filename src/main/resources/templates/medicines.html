@@ -517,8 +517,8 @@
                             <input type="number"
                                    class="form-control"
                                    name="weight"
-                                   step="0.01"
-                                   min="0.01"
+                                   step="0.1"
+                                   min="0.1"
                                    value="${item.gram}"
                                    data-id="${item.medicine.id}"
                                    onchange="updateMdcInfoInCalculator(this, 'gram', this.value)"
@@ -530,8 +530,8 @@
                             <input type="number"
                                    class="form-control"
                                    name="coefficient"
-                                   step="0.01"
-                                   min="0"
+                                   step="0.1"
+                                   min="1"
                                    max="10"
                                    value="${item.weight}"
                                    data-id="${item.medicine.id}"
@@ -945,7 +945,7 @@
                             <div class="col-md-4">
                                 <select id="secondLevelInput" class="form-select" aria-label="二级分类"
                                         th:field="*{secondCategory}">
-                                    <option selected th:value="${mdcCategories.get('暂未归类')}"
+                                    <option selected th:value="${mdcCategories.get('暂未归类')[0]}"
                                             th:text="${mdcCategories.get('暂未归类')[0]}"></option>
                                 </select>
                             </div>
@@ -1069,8 +1069,8 @@
                             <div class="col-md-4">
                                 <select id="editSecondLevelInput" class="form-select" aria-label="二级分类"
                                         th:field="*{secondCategory}">
-                                    <option selected th:value="${mdcCategories.get('暂未归类')}"
-                                            th:text="${mdcCategories.get('暂未归类')}"></option>
+                                    <option selected th:value="${mdcCategories.get('暂未归类')[0]}"
+                                            th:text="${mdcCategories.get('暂未归类')[0]}"></option>
                                 </select>
                             </div>
                         </div>
@@ -1080,7 +1080,7 @@
                             </label>
                             <label>
                                 <textarea id="editNatureAndFlavor" class="form-control" rows="3" placeholder="请输入..."
-                                          maxlength="64" th:field="*{natureAndFlavor}"></textarea>
+                                          maxlength="2048" th:field="*{natureAndFlavor}"></textarea>
                             </label>
                         </div>
                         <div class="row mb-3">
@@ -1089,7 +1089,7 @@
                             </label>
                             <label>
                                 <textarea id="editChannelTropism" class="form-control" rows="3" placeholder="请输入..."
-                                          maxlength="64" th:field="*{channelTropism}"></textarea>
+                                          maxlength="2048" th:field="*{channelTropism}"></textarea>
                             </label>
                         </div>
                         <div class="row mb-3">
@@ -1098,7 +1098,7 @@
                             </label>
                             <label>
                                 <textarea id="editEfficacy" class="form-control" rows="3" placeholder="请输入..."
-                                          maxlength="64" th:field="*{efficacy}"></textarea>
+                                          maxlength="2048" th:field="*{efficacy}"></textarea>
                             </label>
                         </div>
                         <div class="row mb-3">
@@ -1107,7 +1107,7 @@
                             </label>
                             <label>
                                 <textarea id="editClinicalApplication" class="form-control" rows="3"
-                                          placeholder="请输入..." maxlength="64"
+                                          placeholder="请输入..." maxlength="2048"
                                           th:field="*{clinicalApplication}"></textarea>
                             </label>
                         </div>
@@ -1117,7 +1117,7 @@
                             </label>
                             <label>
                                 <textarea id="editMmpResearch" class="form-control" rows="3" placeholder="请输入..."
-                                          maxlength="64" th:field="*{mmpResearch}"></textarea>
+                                          maxlength="2048" th:field="*{mmpResearch}"></textarea>
                             </label>
                         </div>
                         <div class="row mb-3">
