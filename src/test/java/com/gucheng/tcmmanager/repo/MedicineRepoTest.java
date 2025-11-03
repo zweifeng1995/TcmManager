@@ -65,8 +65,8 @@ public class MedicineRepoTest {
         log.info("medicineRepo.findAll(): {}", medicineRepo.findAll());
         Assertions.assertEquals(2, medicineRepo.findAll().size());
 
-        log.info("medicineRepo.findByCondition(\"\", \"\", \"\"): {}", medicineRepo.findByCondition("", "", "", "", "", "", ""));
-        Assertions.assertEquals(2, medicineRepo.findByCondition("", "", "", "", "", "", "").size());
+        log.info("medicineRepo.findByCondition(\"\", \"\", \"\"): {}", medicineRepo.findByCondition("", "","", "", "", "", "", ""));
+        Assertions.assertEquals(2, medicineRepo.findByCondition("", "","", "", "", "", "", "").size());
     }
 
     private void generateData(String name) {

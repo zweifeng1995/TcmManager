@@ -21,6 +21,7 @@ import java.util.List;
 public interface MedicineRepo extends JpaRepository<MedicineEntity, String> {
     @Query(value = "SELECT m.* FROM medicine m" +
             " WHERE m.name LIKE %:name%" +
+            " AND m.mmp_research LIKE %:mmp_research%" +
             " AND (:first_category = '' OR m.first_category = :first_category)" +
             " AND (:second_category = '' OR m.second_category = :second_category)" +
             " AND EXISTS (SELECT 1 FROM medicine_extend me WHERE me.medicine_id = m.id AND me.efficacy LIKE %:efficacy%)" +
@@ -29,6 +30,7 @@ public interface MedicineRepo extends JpaRepository<MedicineEntity, String> {
             " AND EXISTS (SELECT 1 FROM medicine_extend me WHERE me.medicine_id = m.id AND me.channel_tropism LIKE %:channel_tropism%)",
             nativeQuery = true)
     List<MedicineEntity> findByCondition(@Param("name") String name,
+                                         @Param("mmp_research") String mmpResearch,
                                          @Param("efficacy") String efficacy,
                                          @Param("clinical_application") String clinicalApplication,
                                          @Param("first_category") String firstCategory,

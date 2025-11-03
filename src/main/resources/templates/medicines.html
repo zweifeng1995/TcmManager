@@ -156,7 +156,8 @@
             if (pageNum == null) {
                 pageNum = 1;
             }
-            let queryMedicineName = document.getElementById("queryMedicineName");
+            let queryMdcName = document.getElementById("queryMdcName");
+            let queryMmpResearch = document.getElementById("queryMmpResearch");
             let queryEfficacy = document.getElementById("queryEfficacy");
             let queryClinicalApplication = document.getElementById("queryClinicalApplication");
             let queryFirstLevel = document.getElementById("queryFirstLevel");
@@ -165,8 +166,11 @@
             let queryChannelTropism = document.getElementById("queryChannelTropism");
 
             let queryString = "?pageNum=" + pageNum;
-            if (queryMedicineName != null && queryMedicineName.value != null && queryMedicineName.value != "") {
-                queryString += "&name=" + queryMedicineName.value;
+            if (queryMdcName != null && queryMdcName.value != null && queryMdcName.value != "") {
+                queryString += "&name=" + queryMdcName.value;
+            }
+            if (queryMmpResearch != null && queryMmpResearch.value != null && queryMmpResearch.value != "") {
+                queryString += "&mmp_research=" + queryMmpResearch.value;
             }
             if (queryEfficacy != null && queryEfficacy.value != null && queryEfficacy.value != "") {
                 queryString += "&efficacy=" + queryEfficacy.value;
@@ -251,6 +255,9 @@
                         }
                     }
                 }
+            });
+            window.addEventListener('resize', function() {
+                mdcCalculationChart.resize();
             });
             // ================================================== 初始化药性计算直方图(End) ==================================================
 
@@ -613,7 +620,17 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-3"></div>
+                        <div class="col-3 align-middle text-nowrap">
+                            <div class="row">
+                                <label for="queryMmpResearch" class="col-5 col-form-label">
+                                    <strong>现代医学药理研究：</strong>
+                                </label>
+                                <div class="col-7">
+                                    <input type="text" class="form-control" name="queryMmpResearch"
+                                           id="queryMmpResearch" placeholder="请输入..."/>
+                                </div>
+                            </div>
+                        </div>
                         <div class="col-3"></div>
                     </div>
                     <div class="row my-3">
@@ -703,8 +720,8 @@
             </div>
         </div>
         <div class="row my-3">
-            <div class="col-9 overflow-auto">
-                <div class="container-fluid p-0" th:fragment="medicineTable" id="medicineTable">
+            <div class="col-9">
+                <div class="container-fluid p-0 overflow-auto" th:fragment="medicineTable" id="medicineTable">
                     <table class="table table-striped table-hover align-middle text-nowrap">
                         <thead>
                         <tr class="table-primary">
@@ -811,63 +828,66 @@
                         </tr>
                         </tbody>
                     </table>
-                    <div class="container-fluid p-0">
-                        <div class="container d-flex justify-content-center align-items-center">
-                            <ul class="pagination">
-                                <li th:class="${medicineTableDTO.pageNum} > 1 ? 'page-item' : 'page-item disabled'">
-                                    <p class="page-link" style="cursor: pointer"
-                                       th:onclick="refreshMedicinesTable(1)">
-                                        <<</p>
-                                </li>
-                                <li th:class="${medicineTableDTO.pageNum} > 1 ? 'page-item' : 'page-item disabled'">
-                                    <p class="page-link" style="cursor: pointer"
-                                       th:onclick="refreshMedicinesTable([[${medicineTableDTO.pageNum - 1}]])"><</p>
-                                </li>
-                                <li class="page-item" th:if="${medicineTableDTO.pageNum - 2} > 0">
-                                    <p class="page-link" style="cursor: pointer"
-                                       th:onclick="refreshMedicinesTable([[${medicineTableDTO.pageNum - 2}]])"
-                                       th:text="${medicineTableDTO.pageNum - 2}"></p>
-                                </li>
-                                <li class="page-item" th:if="${medicineTableDTO.pageNum - 1} > 0">
-                                    <p class="page-link" style="cursor: pointer"
-                                       th:onclick="refreshMedicinesTable([[${medicineTableDTO.pageNum - 1}]])"
-                                       th:text="${medicineTableDTO.pageNum - 1}"></p>
-                                </li>
-                                <li class="page-item active">
-                                    <p class="page-link" th:text="${medicineTableDTO.pageNum}"></p>
-                                </li>
-                                <li class="page-item"
-                                    th:if="${medicineTableDTO.pageNum + 1} <= ${medicineTableDTO.totalPage}">
-                                    <p class="page-link" style="cursor: pointer"
-                                       th:onclick="refreshMedicinesTable([[${medicineTableDTO.pageNum + 1}]])"
-                                       th:text="${medicineTableDTO.pageNum + 1}"></p>
-                                </li>
-                                <li class="page-item"
-                                    th:if="${medicineTableDTO.pageNum + 2} <= ${medicineTableDTO.totalPage}">
-                                    <p class="page-link" style="cursor: pointer"
-                                       th:onclick="refreshMedicinesTable([[${medicineTableDTO.pageNum + 2}]])"
-                                       th:text="${medicineTableDTO.pageNum + 2}"></p>
-                                </li>
-                                <li th:class="${medicineTableDTO.pageNum} < ${medicineTableDTO.totalPage} ? 'page-item' : 'page-item disabled'">
-                                    <p class="page-link" style="cursor: pointer"
-                                       th:onclick="refreshMedicinesTable([[${medicineTableDTO.pageNum + 1}]])">></p>
-                                </li>
-                                <li th:class="${medicineTableDTO.pageNum} < ${medicineTableDTO.totalPage} ? 'page-item' : 'page-item disabled'">
-                                    <p class="page-link" style="cursor: pointer"
-                                       th:onclick="refreshMedicinesTable([[${medicineTableDTO.totalPage}]])">>></p>
-                                </li>
-                            </ul>
-                        </div>
+                    <div class="container-fluid p-0 justify-content-center align-items-center text-center"
+                         style="width: 100%;" th:if="${medicineTableDTO.medicines.size() <= 0}">
+                        <img style="height: 300px; width: 300px;" src="/img/no_data.png" alt="暂无任何药材数据"/>
+                        <h6 class="text-muted">暂无任何药材数据</h6>
+                    </div>
+                    <div class="container-fluid p-0" th:if="${medicineTableDTO.medicines.size() > 0}">
+                        <ul class="pagination">
+                            <li th:class="${medicineTableDTO.pageNum} > 1 ? 'page-item' : 'page-item disabled'">
+                                <p class="page-link" style="cursor: pointer"
+                                   th:onclick="refreshMedicinesTable(1)">
+                                    <<</p>
+                            </li>
+                            <li th:class="${medicineTableDTO.pageNum} > 1 ? 'page-item' : 'page-item disabled'">
+                                <p class="page-link" style="cursor: pointer"
+                                   th:onclick="refreshMedicinesTable([[${medicineTableDTO.pageNum - 1}]])"><</p>
+                            </li>
+                            <li class="page-item" th:if="${medicineTableDTO.pageNum - 2} > 0">
+                                <p class="page-link" style="cursor: pointer"
+                                   th:onclick="refreshMedicinesTable([[${medicineTableDTO.pageNum - 2}]])"
+                                   th:text="${medicineTableDTO.pageNum - 2}"></p>
+                            </li>
+                            <li class="page-item" th:if="${medicineTableDTO.pageNum - 1} > 0">
+                                <p class="page-link" style="cursor: pointer"
+                                   th:onclick="refreshMedicinesTable([[${medicineTableDTO.pageNum - 1}]])"
+                                   th:text="${medicineTableDTO.pageNum - 1}"></p>
+                            </li>
+                            <li class="page-item active">
+                                <p class="page-link" th:text="${medicineTableDTO.pageNum}"></p>
+                            </li>
+                            <li class="page-item"
+                                th:if="${medicineTableDTO.pageNum + 1} <= ${medicineTableDTO.totalPage}">
+                                <p class="page-link" style="cursor: pointer"
+                                   th:onclick="refreshMedicinesTable([[${medicineTableDTO.pageNum + 1}]])"
+                                   th:text="${medicineTableDTO.pageNum + 1}"></p>
+                            </li>
+                            <li class="page-item"
+                                th:if="${medicineTableDTO.pageNum + 2} <= ${medicineTableDTO.totalPage}">
+                                <p class="page-link" style="cursor: pointer"
+                                   th:onclick="refreshMedicinesTable([[${medicineTableDTO.pageNum + 2}]])"
+                                   th:text="${medicineTableDTO.pageNum + 2}"></p>
+                            </li>
+                            <li th:class="${medicineTableDTO.pageNum} < ${medicineTableDTO.totalPage} ? 'page-item' : 'page-item disabled'">
+                                <p class="page-link" style="cursor: pointer"
+                                   th:onclick="refreshMedicinesTable([[${medicineTableDTO.pageNum + 1}]])">></p>
+                            </li>
+                            <li th:class="${medicineTableDTO.pageNum} < ${medicineTableDTO.totalPage} ? 'page-item' : 'page-item disabled'">
+                                <p class="page-link" style="cursor: pointer"
+                                   th:onclick="refreshMedicinesTable([[${medicineTableDTO.totalPage}]])">>></p>
+                            </li>
+                        </ul>
                     </div>
                 </div>
             </div>
             <div class="col-3">
-                <div class="panel panel-default border rounded p-3">
+                <div class="panel panel-default border rounded p-3 overflow-auto">
                     <div class="panel-heading">
                         <h4 class="panel-title fw-bold text-center">药性计算面板</h4>
                     </div>
                     <div class="panel-body">
-                        <div class="container-fluid overflow-auto mb-3" style="max-height: 600px;">
+                        <div class="container-fluid overflow-auto mb-3" style="max-height: 600px; min-width: 300px;">
                             <table class="table table-bordered border-dark table-striped table-hover align-middle text-nowrap"
                                    id="calculationTable" style="width: 100%;">
                                 <thead>
@@ -892,11 +912,11 @@
                                 <tbody id="calculationTableBody"></tbody>
                             </table>
                         </div>
-                        <div>
+                        <div class="container-fluid overflow-auto mb-3" style="min-width: 300px;">
                             <canvas id="mdcCalChartElement"></canvas>
                         </div>
                     </div>
-                    <div class="d-flex flex-row-reverse">
+                    <div class="d-flex flex-row-reverse text-nowrap">
                         <button class="btn btn-primary m-1" onclick="openSubmitPrescriptionModal()">
                             保存为新药方
                         </button>

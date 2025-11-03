@@ -107,6 +107,7 @@ public class WebMedicinesController {
     @GetMapping("/refreshMedicinesTable")
     public String refreshTable(Model model,
                                @RequestParam(value = "name", required = false, defaultValue = "") String name,
+                               @RequestParam(value = "mmp_research", required = false, defaultValue = "") String mmpResearch,
                                @RequestParam(value = "efficacy", required = false, defaultValue = "") String efficacy,
                                @RequestParam(value = "clinical_application", required = false, defaultValue = "") String clinicalApplication,
                                @RequestParam(value = "first_category", required = false, defaultValue = "") String firstCategory,
@@ -116,7 +117,7 @@ public class WebMedicinesController {
                                @RequestParam(value = "pageNum", defaultValue = "1") int pageNum,
                                @RequestParam(value = "pageSize", defaultValue = "20") int pageSize) {
 
-        List<MedicineEntity> medicineEntities = medicineDao.findByCondition(name, efficacy, clinicalApplication, firstCategory, secondCategory,natureAndFlavor, channelTropism);
+        List<MedicineEntity> medicineEntities = medicineDao.findByCondition(name, mmpResearch, efficacy, clinicalApplication, firstCategory, secondCategory,natureAndFlavor, channelTropism);
 
         MedicineTableDTO medicineTableDTO = query(pageNum, pageSize, medicineEntities);
         model.addAttribute("medicineTableDTO", medicineTableDTO); // 用于展示

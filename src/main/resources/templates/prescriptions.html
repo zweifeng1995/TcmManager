@@ -22,11 +22,6 @@
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
         }
 
-        .herb-list {
-            max-height: 120px;
-            overflow-y: auto;
-        }
-
         .close-btn {
             position: absolute;
             top: 10px;
@@ -143,7 +138,13 @@
         <div class="row">
             <h2 class="fw-bold text-center">药方库</h2>
         </div>
-        <div class="row" th:fragment="prescriptionsTable" id="prescriptionsTable">
+        <hr>
+        <div class="row justify-content-center align-items-center text-center" th:if="${prescriptionTableDTO.getPrescriptionList().size() <= 0}">
+            <img style="height: 300px; width: 300px;" src="/img/no_data.png" alt="暂无任何药方数据"/>
+            <h6 class="text-muted">暂无任何药方数据</h6>
+        </div>
+        <div class="row" th:if="${prescriptionTableDTO.getPrescriptionList().size() > 0}"
+             th:fragment="prescriptionsTable" id="prescriptionsTable">
             <div class="col-md-6 col-lg-4 col-xl-3 my-2"
                  th:each="prescriptionDTO, status: ${prescriptionTableDTO.getPrescriptionList()}">
                 <div class="card recipe-card position-relative">
@@ -155,19 +156,21 @@
                             <strong th:text="${prescriptionDTO.getPrescriptionName()}"></strong>
                         </h3>
                         <h6 class="mt-3 pb-1 fw-bold text-nowrap">药方描述: </h6>
-                        <p class="card-text d-flex overflow-auto border-bottom" style="max-height: 100px; height: 100px;"
+                        <p class="card-text d-flex overflow-auto px-3" style="max-height: 100px; height: 100px;"
                            th:text="${prescriptionDTO.getPrescriptionDesc()}"></p>
                         <h6 class="mt-3 pb-1 fw-bold text-nowrap">组成药材:</h6>
-                        <ul class="list-group list-group-flush herb-list border-bottom" style="max-height: 200px; height: 200px;">
-                            <li class="list-group-item d-flex"
+                        <ul class="list-group list-group-flush herb-list overflow-auto px-3"
+                            style="max-height: 200px; height: 200px;">
+                            <li class="list-group-item d-flex align-items-center" style="background-color: #FAFAFA"
                                 th:each="medicine, status: ${prescriptionDTO.getPrescriptionMedicines()}">
-                                <img style="height: 24px; width: 24px" src="/img/medicine.png"/>
+                                <img class="me-2" style="height: 24px; width: 24px" src="/img/medicine.png"
+                                     alt="药材图标"/>
                                 <span th:text="${medicine.name}"></span>
-                                <span th:text="${', ' + medicine.getFormattedGram() + ' 克'}"></span>
+                                <span class="ms-1" th:text="${', ' + medicine.getFormattedGram() + ' 克'}"></span>
                             </li>
                         </ul>
                         <h6 class="mt-3 pb-1 fw-bold text-nowrap">药性汇总:</h6>
-                        <div class="table-responsive">
+                        <div class="table-responsive px-3">
                             <table class="table table-bordered border-dark align-middle text-nowrap mt-0 mb-0">
                                 <thead>
                                 <tr>

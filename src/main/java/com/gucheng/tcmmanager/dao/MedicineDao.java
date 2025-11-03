@@ -126,7 +126,7 @@ public class MedicineDao {
         return medicineRepo.findAll();
     }
 
-    public List<MedicineEntity> findByCondition(String name, String efficacy, String clinicalApplication,String firstCategory, String secondCategory, String natureAndFlavor, String channelTropism) {
-        return medicineRepo.findByCondition(name, efficacy, clinicalApplication,firstCategory, secondCategory, natureAndFlavor, channelTropism);
+    public List<MedicineEntity> findByCondition(String name, String mmpResearch, String efficacy, String clinicalApplication,String firstCategory, String secondCategory, String natureAndFlavor, String channelTropism) {
+        return medicineRepo.findByCondition(name, mmpResearch, efficacy, clinicalApplication,firstCategory, secondCategory, natureAndFlavor, channelTropism);
     }
 }
