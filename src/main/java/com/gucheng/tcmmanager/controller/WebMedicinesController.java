@@ -7,9 +7,7 @@ import com.gucheng.tcmmanager.config.MedicineCategoryConfig;
 import com.gucheng.tcmmanager.dao.MedicineDao;
 import com.gucheng.tcmmanager.model.dto.*;
 import com.gucheng.tcmmanager.model.entity.MedicineEntity;
-import com.gucheng.tcmmanager.model.entity.MedicineExtendEntity;
 import com.gucheng.tcmmanager.model.entity.MedicinePropertyEntity;
-import com.gucheng.tcmmanager.repository.MedicineRepo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -37,8 +35,8 @@ public class WebMedicinesController {
         List<MedicineEntity> medicineEntities = medicineDao.findAll();
         MedicineTableDTO medicineTableDTO = query(pageNum, pageSize, medicineEntities);
 
-        Map<String, String> medicinePropertyKindMap = new HashMap<>();
-        Arrays.stream(MdcPropKind.values()).forEach(value -> medicinePropertyKindMap.put(value.name(), value.getValueZhCn()));
+        Map<String, String> medicinePropertyKindMap = new LinkedHashMap<>();
+        Arrays.stream(MdcPropKind.valuesBySort()).forEach(value -> medicinePropertyKindMap.put(value.name(), value.getValueZhCn()));
         model.addAttribute("medicineTableDTO", medicineTableDTO); // 用于前台药材列表展示
         model.addAttribute("submitMedicineDTO", new MedicineDTO()); // 用于前台添加药材
         model.addAttribute("editMedicineDTO", new MedicineDTO()); // 用于前台修改药材
@@ -72,30 +70,6 @@ public class WebMedicinesController {
         return "medicines :: toastContainer";
     }
 
-    @PutMapping("/medicines")
-    public String editMedicine(Model model, @ModelAttribute MedicineDTO medicineDTO) {
-        log.info("medicineDTO: {}", medicineDTO);
-        if (medicineDTO.getName() == null || medicineDTO.getName().isEmpty()) {
-            throw new RuntimeException("药材名不能为空！");
-        }
-        if (medicineDTO.getMmpResearch() == null || medicineDTO.getMmpResearch().isEmpty()) {
-            throw new RuntimeException("现代医学药理研究不能为空！");
-        }
-        if (medicineDTO.getProperties().stream().noneMatch(property -> property.getLevel() > 0)) {
-            throw new RuntimeException("药性不能为空！");
-        }
-        if (medicineDTO.getFirstCategory() == null || medicineDTO.getFirstCategory().isEmpty()) {
-            throw new RuntimeException("一级分类不能为空！");
-        }
-        if (medicineDTO.getSecondCategory() == null || medicineDTO.getSecondCategory().isEmpty()) {
-            throw new RuntimeException("二级分类不能为空！");
-        }
-        medicineDao.editMedicine(medicineDTO);
-//        this.medicines(model, 1, 20);
-//        model.addAttribute("submitErrorMsg", "提交失败！");
-        return "medicines :: toastContainer";
-    }
-
     @DeleteMapping("/medicines")
     public String deleteMedicine(Model model, @RequestParam(value = "ids") String ids) {
         log.info("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< deleteMedicine ids: {}.", ids);
@@ -106,18 +80,13 @@ public class WebMedicinesController {
 
     @GetMapping("/refreshMedicinesTable")
     public String refreshTable(Model model,
-                               @RequestParam(value = "name", required = false, defaultValue = "") String name,
-                               @RequestParam(value = "mmp_research", required = false, defaultValue = "") String mmpResearch,
-                               @RequestParam(value = "efficacy", required = false, defaultValue = "") String efficacy,
-                               @RequestParam(value = "clinical_application", required = false, defaultValue = "") String clinicalApplication,
+                               @RequestParam(value = "all", required = false, defaultValue = "") String all,
                                @RequestParam(value = "first_category", required = false, defaultValue = "") String firstCategory,
                                @RequestParam(value = "second_category", required = false, defaultValue = "") String secondCategory,
-                               @RequestParam(value = "nature_and_flavor", required = false, defaultValue = "") String natureAndFlavor,
-                               @RequestParam(value = "channel_tropism", required = false, defaultValue = "") String channelTropism,
                                @RequestParam(value = "pageNum", defaultValue = "1") int pageNum,
                                @RequestParam(value = "pageSize", defaultValue = "20") int pageSize) {
 
-        List<MedicineEntity> medicineEntities = medicineDao.findByCondition(name, mmpResearch, efficacy, clinicalApplication, firstCategory, secondCategory,natureAndFlavor, channelTropism);
+        List<MedicineEntity> medicineEntities = medicineDao.findByCondition(all, firstCategory, secondCategory);
 
         MedicineTableDTO medicineTableDTO = query(pageNum, pageSize, medicineEntities);
         model.addAttribute("medicineTableDTO", medicineTableDTO); // 用于展示
@@ -130,14 +99,17 @@ public class WebMedicinesController {
             MedicineDTO medicineDTO = new MedicineDTO();
             if (entity.getProperties() != null) {
                 List<MedicinePropDTO> medicinePropDTOList = new ArrayList<>();
-                entity.getProperties().forEach(property -> {
-                    MedicinePropDTO medicinePropDTO = MedicinePropDTO.builder().kind(MdcPropKind.values()[property.getKind()]).level(property.getLevel()).build();
-                    medicinePropDTOList.add(medicinePropDTO);
-                });
+                for (MdcPropKind mdcPropKind : MdcPropKind.valuesBySort()) {
+                    Optional<MedicinePropertyEntity> medicinePropertyEntity = entity.getProperties().stream()
+                            .filter(property -> property.getKind() == mdcPropKind.ordinal())
+                            .findFirst();
+                    medicinePropertyEntity.ifPresent(propertyEntity -> medicinePropDTOList.add(MedicinePropDTO.builder().kind(mdcPropKind).level(propertyEntity.getLevel()).build()));
+                }
                 medicineDTO.setProperties(medicinePropDTOList);
             }
             medicineDTO.setId(entity.getId());
             medicineDTO.setName(entity.getName());
+            medicineDTO.setWeight(entity.getWeight());
             medicineDTO.setFirstCategory(entity.getFirstCategory());
             medicineDTO.setSecondCategory(entity.getSecondCategory());
             medicineDTO.setMmpResearch(entity.getMmpResearch());

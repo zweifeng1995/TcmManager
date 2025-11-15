@@ -13,12 +13,14 @@ import com.gucheng.tcmmanager.repository.MedicinePropertyRepo;
 import com.gucheng.tcmmanager.repository.MedicineRepo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import javax.transaction.Transactional;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -67,6 +69,7 @@ public class MedicineDao {
         medicineExtendEntity.setMedicineEntity(medicineEntity);
 
         medicineEntity.setName(medicineDTO.getName());
+        medicineEntity.setWeight(medicineDTO.getWeight());
         medicineEntity.setMmpResearch(medicineDTO.getMmpResearch());
         medicineEntity.setFirstCategory(medicineDTO.getFirstCategory());
         medicineEntity.setSecondCategory(medicineDTO.getSecondCategory());
@@ -81,6 +84,8 @@ public class MedicineDao {
     @Transactional
     public void editMedicine(MedicineDTO medicineDTO) {
         MedicineEntity medicineEntity = medicineRepo.findByName((medicineDTO.getName()));
+        medicineEntity.setId(medicineDTO.getId());
+        medicineEntity.setWeight(medicineDTO.getWeight());
         medicineEntity.setMmpResearch(medicineDTO.getMmpResearch());
         medicineEntity.setFirstCategory(medicineDTO.getFirstCategory());
         medicineEntity.setSecondCategory(medicineDTO.getSecondCategory());
@@ -126,7 +131,13 @@ public class MedicineDao {
         return medicineRepo.findAll();
     }
 
-    public List<MedicineEntity> findByCondition(String name, String mmpResearch, String efficacy, String clinicalApplication,String firstCategory, String secondCategory, String natureAndFlavor, String channelTropism) {
-        return medicineRepo.findByCondition(name, mmpResearch, efficacy, clinicalApplication,firstCategory, secondCategory, natureAndFlavor, channelTropism);
+    public MedicineDTO findById(String id) {
+        Optional<MedicineEntity> medicineEntity = medicineRepo.findById(id);
+        return medicineEntity.map(MedicineDTO::new).orElseGet(MedicineDTO::new);
     }
+
+    public List<MedicineEntity> findByCondition(String all, String firstCategory, String secondCategory) {
+        return medicineRepo.findByCondition(all, firstCategory, secondCategory);
+    }
+
 }

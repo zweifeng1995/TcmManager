@@ -134,6 +134,9 @@
             const selectedValue = queryFirstLevelSelect.value;
 
             querySecondLevelSelect.innerHTML = '全选';
+            querySecondLevelSelect.onchange = (() => {
+                refreshMedicinesTable();
+            });
 
             const defaultOption = document.createElement('option');
             defaultOption.value = '';
@@ -148,6 +151,7 @@
                     querySecondLevelSelect.appendChild(option);
                 });
             }
+            refreshMedicinesTable();
         }
         // ================================================== 查询药材按钮的相关操作(End) ==================================================
 
@@ -156,39 +160,19 @@
             if (pageNum == null) {
                 pageNum = 1;
             }
-            let queryMdcName = document.getElementById("queryMdcName");
-            let queryMmpResearch = document.getElementById("queryMmpResearch");
-            let queryEfficacy = document.getElementById("queryEfficacy");
-            let queryClinicalApplication = document.getElementById("queryClinicalApplication");
+            let queryMdcAll = document.getElementById("queryMdcAll");
             let queryFirstLevel = document.getElementById("queryFirstLevel");
             let querySecondLevel = document.getElementById("querySecondLevel");
-            let queryNatureAndFlavor = document.getElementById("queryNatureAndFlavor");
-            let queryChannelTropism = document.getElementById("queryChannelTropism");
 
             let queryString = "?pageNum=" + pageNum;
-            if (queryMdcName != null && queryMdcName.value != null && queryMdcName.value != "") {
-                queryString += "&name=" + queryMdcName.value;
-            }
-            if (queryMmpResearch != null && queryMmpResearch.value != null && queryMmpResearch.value != "") {
-                queryString += "&mmp_research=" + queryMmpResearch.value;
-            }
-            if (queryEfficacy != null && queryEfficacy.value != null && queryEfficacy.value != "") {
-                queryString += "&efficacy=" + queryEfficacy.value;
-            }
-            if (queryClinicalApplication != null && queryClinicalApplication.value != null && queryClinicalApplication.value != "") {
-                queryString += "&clinical_application=" + queryClinicalApplication.value;
+            if (queryMdcAll != null && queryMdcAll.value != null && queryMdcAll.value != "") {
+                queryString += "&all=" + queryMdcAll.value;
             }
             if (queryFirstLevel != null && queryFirstLevel.value != null && queryFirstLevel.value != "") {
                 queryString += "&first_category=" + queryFirstLevel.value;
             }
             if (querySecondLevel != null && querySecondLevel.value != null && querySecondLevel.value != "") {
                 queryString += "&second_category=" + querySecondLevel.value;
-            }
-            if (queryNatureAndFlavor != null && queryNatureAndFlavor.value != null && queryNatureAndFlavor.value != "") {
-                queryString += "&nature_and_flavor=" + queryNatureAndFlavor.value;
-            }
-            if (queryChannelTropism != null && queryChannelTropism.value != null && queryChannelTropism.value != "") {
-                queryString += "&channel_tropism=" + queryChannelTropism.value;
             }
             $.ajax({
                 url: "/refreshMedicinesTable" + queryString,
@@ -310,6 +294,19 @@
                     success: function (data) {
                         showToast("success", "修改药材成功！", "操作成功");
                         refreshMedicinesTable();
+                        mdcCalculator.selectedMdcList.forEach(item => {
+                            if (item.medicine.id == data.id) {
+                                mdcCalculator.deleteMdcInfo(data.id);
+                                medicineInfo = {
+                                    "medicine": data,
+                                    "gram": 1.0,
+                                    "weight": data.weight
+                                }
+                                mdcCalculator.pushMdcInfo(medicineInfo);
+                                refreshCalculationTable();
+                                refreshChart();
+                            }
+                        });
                         editMedicineForm.reset();
                     },
                     error: function (xhr, status, error) {
@@ -386,41 +383,58 @@
 
         // ================================================== 打开编辑药材页面(Start) ==================================================
         function openEditMedicineModal(button) {
-            const row = button.closest('tr');
-            const cells = row.getElementsByTagName('td');
-            const editName = document.getElementById('editName');
-            editName.value = cells[2].getElementsByTagName('p')[0].innerText;
-            editName.readOnly = true;
-            document.getElementById('editFirstLevelInput').value = cells[3].getElementsByTagName('p')[0].innerText;
-            updateEditSecondLevelInput();
-            document.getElementById('editSecondLevelInput').value = cells[4].getElementsByTagName('p')[0].innerText;
-            document.getElementById('editMmpResearch').value = cells[5].getElementsByTagName('p')[0].innerText;
-            document.getElementById('editNatureAndFlavor').value = cells[6].getElementsByTagName('p')[0].innerText;
-            document.getElementById('editChannelTropism').value = cells[7].getElementsByTagName('p')[0].innerText;
-            document.getElementById('editEfficacy').value = cells[8].getElementsByTagName('p')[0].innerText;
-            document.getElementById('editClinicalApplication').value = cells[9].getElementsByTagName('p')[0].innerText;
+            const medicineId = button.getAttribute('value');
+            $.ajax({
+                url: "/medicine?id=" + medicineId,
+                type: "GET",
+                processData: false,
+                contentType: false,
+                success: function (data) {
+                    const editName = document.getElementById('editName');
+                    editName.value = data.name;
+                    editName.readOnly = true;
 
-            const rawKindShow = cells[10].getElementsByTagName('span');
-            const kindShowMap = new Map();
-            Array.from(rawKindShow).forEach((kind) => {
-                kindKeyValue = kind.dataset.role.split(":");
-                kindKey = kindKeyValue[0];
-                kindValue = kindKeyValue[1];
-                kindShowMap.set(kindKey, kindValue);
-            });
-            Object.keys(mdcPropKindMap).forEach(key => {
-                document.getElementById("edit" + key).value = 0;
-                document.getElementById("edit" + key + "Span").innerText = 0;
-                document.getElementById("edit" + key + "Hidden").innerText = 0;
-            });
-            kindShowMap.forEach((value, key) => {
-                document.getElementById("edit" + key).value = value;
-                document.getElementById("edit" + key + "Span").innerText = value;
-                document.getElementById("edit" + key + "Hidden").innerText = value;
-            });
+                    document.getElementById('editId').value = data.id;
+                    document.getElementById('editWeight').value = data.weight;
+                    document.getElementById('editFirstLevelInput').value = data.first_category;
+                    updateEditSecondLevelInput();
+                    document.getElementById('editSecondLevelInput').value = data.second_category;
+                    document.getElementById('editMmpResearch').value = data.mmp_research;
+                    document.getElementById('editNatureAndFlavor').value = data.nature_and_flavor;
+                    document.getElementById('editChannelTropism').value = data.channel_tropism;
+                    document.getElementById('editEfficacy').value = data.efficacy;
+                    document.getElementById('editClinicalApplication').value = data.clinical_application;
 
-            const editMedicineModal = new bootstrap.Modal(document.getElementById('editMedicineModal'));
-            editMedicineModal.show();
+                    const kindShowMap = new Map();
+                    data.properties.forEach((item) => {
+                        kindShowMap.set(item.kind, item.level);
+                    });
+
+                    Object.keys(mdcPropKindMap).forEach(key => {
+                        document.getElementById("edit" + key).value = 0;
+                        document.getElementById("edit" + key + "Span").innerText = 0;
+                        document.getElementById("edit" + key + "Hidden").innerText = 0;
+                    });
+                    kindShowMap.forEach((value, key) => {
+                        document.getElementById("edit" + key).value = value;
+                        document.getElementById("edit" + key + "Span").innerText = value;
+                        document.getElementById("edit" + key + "Hidden").innerText = value;
+                    });
+
+                    const editMedicineModal = new bootstrap.Modal(document.getElementById('editMedicineModal'));
+                    editMedicineModal.show();
+                },
+                error: function (xhr, status, error) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        showToast('error', "药方修改失败！\n失败原因：" + response.message, "操作失败");
+                    } catch (e) {
+                        showToast('error', "药方修改失败！\n失败原因：未知错误", "操作失败");
+                    }
+                },
+                complete: function () {
+                }
+            })
         }
         function updateEditSecondLevelInput() {
             let mdcCategories = [[${mdcCategories}]];
@@ -483,7 +497,7 @@
                 medicineInfo = {
                     "medicine": medicine,
                     "gram": 1.0,
-                    "weight": 1.0
+                    "weight": medicine.weight
                 }
                 mdcCalculator.pushMdcInfo(medicineInfo);
             } else { // 从计算器中删除药材
@@ -523,7 +537,7 @@
                         <div class="input-group">
                             <input type="number"
                                    class="form-control"
-                                   name="weight"
+                                   name="gram"
                                    step="0.1"
                                    min="0.1"
                                    value="${item.gram}"
@@ -536,14 +550,11 @@
                         <div class="input-group">
                             <input type="number"
                                    class="form-control"
-                                   name="coefficient"
-                                   step="0.1"
-                                   min="1"
-                                   max="10"
+                                   name="weight"
                                    value="${item.weight}"
                                    data-id="${item.medicine.id}"
-                                   onchange="updateMdcInfoInCalculator(this, 'weight', this.value)"
-                                   required>
+                                   style="background-color: #f5f5f5; color: #666; cursor: not-allowed;"
+                                   readonly>
                         </div>
                     </td>
                     <td style="text-align: center;">
@@ -600,79 +611,19 @@
                     <div class="row my-3">
                         <div class="col-3 align-middle text-nowrap">
                             <div class="row">
-                                <label for="queryMdcName" class="col-3 col-form-label">
-                                    <strong>名称：</strong>
+                                <label for="queryMdcAll" class="col-3 col-form-label">
+                                    <strong>全局搜索：</strong>
                                 </label>
                                 <div class="col-9">
-                                    <input type="text" class="form-control" name="queryMdcName" id="queryMdcName"
+                                    <input type="text" class="form-control" name="queryMdcAll" id="queryMdcAll"
+                                           oninput="refreshMedicinesTable()"
                                            placeholder="请输入..."/>
                                 </div>
                             </div>
                         </div>
                         <div class="col-3 align-middle text-nowrap">
                             <div class="row">
-                                <label for="queryClinicalApplication" class="col-4 col-form-label">
-                                    <strong>临床应用：</strong>
-                                </label>
-                                <div class="col-8">
-                                    <input type="text" class="form-control" name="queryClinicalApplication"
-                                           id="queryClinicalApplication" placeholder="请输入..."/>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-3 align-middle text-nowrap">
-                            <div class="row">
-                                <label for="queryMmpResearch" class="col-5 col-form-label">
-                                    <strong>现代医学药理研究：</strong>
-                                </label>
-                                <div class="col-7">
-                                    <input type="text" class="form-control" name="queryMmpResearch"
-                                           id="queryMmpResearch" placeholder="请输入..."/>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-3"></div>
-                    </div>
-                    <div class="row my-3">
-                        <div class="col-3 align-middle text-nowrap">
-                            <div class="row">
-                                <label for="queryNatureAndFlavor" class="col-3 col-form-label">
-                                    <strong>性味：</strong>
-                                </label>
-                                <div class="col-9">
-                                    <input type="text" class="form-control" name="queryNatureAndFlavor"
-                                           id="queryNatureAndFlavor" placeholder="请输入..."/>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-3 align-middle text-nowrap">
-                            <div class="row">
-                                <label for="queryChannelTropism" class="col-4 col-form-label">
-                                    <strong>归经：</strong>
-                                </label>
-                                <div class="col-8">
-                                    <input type="text" class="form-control" name="queryChannelTropism"
-                                           id="queryChannelTropism" placeholder="请输入..."/>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-3 align-middle text-nowrap">
-                            <div class="row">
-                                <label for="queryEfficacy" class="col-3 col-form-label">
-                                    <strong>功效：</strong>
-                                </label>
-                                <div class="col-9">
-                                    <input type="text" class="form-control" name="queryEfficacy" id="queryEfficacy"
-                                           placeholder="请输入..."/>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-3"></div>
-                    </div>
-                    <div class="row my-3">
-                        <div class="col-3 align-middle text-nowrap">
-                            <div class="row">
-                                <label for="queryMdcName" class="col-3 col-form-label">
+                                <label for="queryFirstLevel" class="col-3 col-form-label">
                                     <strong>一级分类：</strong>
                                 </label>
                                 <div class="col-9">
@@ -687,7 +638,7 @@
                         </div>
                         <div class="col-3 align-middle text-nowrap">
                             <div class="row">
-                                <label for="queryClinicalApplication" class="col-4 col-form-label">
+                                <label for="querySecondLevel" class="col-4 col-form-label">
                                     <strong>二级分类：</strong>
                                 </label>
                                 <div class="col-8">
@@ -697,12 +648,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-5"></div>
-                        <div class="col-1 align-middle text-nowrap">
-                            <button type="button" class="btn btn-primary" style="width: 100%;"
-                                    onclick="refreshMedicinesTable()">查询
-                            </button>
-                        </div>
+                        <div class="col-3"></div>
                     </div>
                 </div>
             </div>
@@ -819,7 +765,8 @@
                             </td>
                             <td class="overflow-auto justify-content-center align-items-center text-center">
                                 <div class="d-flex justify-content-center">
-                                    <a title="编辑" style="cursor:pointer" onclick="openEditMedicineModal(this)">
+                                    <a title="编辑" style="cursor:pointer" th:value="${medicine.id}"
+                                       onclick="openEditMedicineModal(this)">
                                         <img style="height: 20px; width: 20px" src="/img/edit.png"
                                              alt="编辑"/>
                                     </a>
@@ -902,7 +849,7 @@
                                         克数<br/>(单位:g)
                                     </th>
                                     <th style="text-align: center; vertical-align: middle; width: 100px; min-width: 100px; background-color: #EDE2C9;">
-                                        权重<br/>(1-10)
+                                        权重<br/>(0,10]
                                     </th>
                                     <th style="text-align: center; vertical-align: middle; width: 50px; min-width: 50px; background-color: #EDE2C9;">
                                         操作
@@ -948,6 +895,16 @@
                                 <label>
                                     <input type="text" class="form-control" placeholder="请输入..." maxlength="32"
                                            th:field="*{name}">
+                                </label>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    <strong>权重(0,10]：</strong>
+                                </label>
+                                <label>
+                                    <input type="number" class="form-control"
+                                           step="0.1" min="0.1" max="10.0"
+                                           value="1" th:field="*{weight}">
                                 </label>
                             </div>
                         </div>
@@ -1070,8 +1027,19 @@
                                     <strong>药材名：</strong>
                                 </label>
                                 <label>
+                                    <input type="hidden" id="editId" th:field="*{id}"/>
                                     <input type="text" class="form-control" id="editName" th:field="*{name}"
                                            style="background-color: #f5f5f5; color: #666; cursor: not-allowed;">
+                                </label>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    <strong>权重(0,10]：</strong>
+                                </label>
+                                <label>
+                                    <input type="number" class="form-control"
+                                           step="0.1" min="0.1" max="10.0"
+                                           value="1" id="editWeight" th:field="*{weight}">
                                 </label>
                             </div>
                         </div>

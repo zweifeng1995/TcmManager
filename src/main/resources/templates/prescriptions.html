@@ -9,7 +9,7 @@
     <script type="text/javascript" th:src="@{/js/bootstrap.bundle.min.js}"></script>
     <script type="text/javascript" th:src="@{/js/bootstrap.min.js}"></script>
     <script type="text/javascript" th:src="@{/js/jquery.min.js}"></script>
-    <script></script>
+    <script type="text/javascript" th:src="@{/js/chart.js}"></script>
     <style>
         .recipe-card {
             transition: transform 0.3s, box-shadow 0.3s;
@@ -34,6 +34,52 @@
         }
     </style>
     <script th:inline="javascript">
+        // ================================================== 初始化参数(Start) ==================================================
+        let mdcCalculationChart = null; // 药性计算直方图
+
+        // 药性枚举类与中文的哈希表，格式：{"HOT": "热"}
+        // 作用1：知道总共有哪些药性
+        // 作用2：展示的时候转换为中文
+        const mdcPropKindMap = [[${mdcPropKindMap}]];
+        // ================================================== 初始化参数(End) ==================================================
+
+        function openMdcCalculationChart(mdcProps) {
+            if (mdcCalculationChart !== null) {
+                mdcCalculationChart.destroy();
+            }
+
+            labels = [];
+            data = [];
+            mdcProps.forEach(item => {
+                labels.push(mdcPropKindMap[item.kind]);
+                data.push(item.formattedLevel)
+            })
+
+            const mdcCalChartElement = document.getElementById('mdcCalChartElement');
+            mdcCalculationChart = new Chart(mdcCalChartElement, {
+                type: 'bar',
+                data: {
+                    labels: labels, // 药性中文名称
+                    datasets: [{
+                        label: '药性总和',
+                        data: data, // 药性总和
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            const mdcCalculationChartModal = new bootstrap.Modal(document.getElementById('mdcCalculationChartModal'));
+            mdcCalculationChartModal.show();
+        }
+
+
         function showToast(type, message, title) {
             let toastId = 'toast-' + Date.now();
             let toastHtml = `
@@ -139,7 +185,8 @@
             <h2 class="fw-bold text-center">药方库</h2>
         </div>
         <hr>
-        <div class="row justify-content-center align-items-center text-center" th:if="${prescriptionTableDTO.getPrescriptionList().size() <= 0}">
+        <div class="row justify-content-center align-items-center text-center"
+             th:if="${prescriptionTableDTO.getPrescriptionList().size() <= 0}">
             <img style="height: 300px; width: 300px;" src="/img/no_data.png" alt="暂无任何药方数据"/>
             <h6 class="text-muted">暂无任何药方数据</h6>
         </div>
@@ -169,24 +216,11 @@
                                 <span class="ms-1" th:text="${', ' + medicine.getFormattedGram() + ' 克'}"></span>
                             </li>
                         </ul>
-                        <h6 class="mt-3 pb-1 fw-bold text-nowrap">药性汇总:</h6>
-                        <div class="table-responsive px-3">
-                            <table class="table table-bordered border-dark align-middle text-nowrap mt-0 mb-0">
-                                <thead>
-                                <tr>
-                                    <th style="text-align: center; background-color: #8793B0; color: white;"
-                                        th:each="mdcProp : ${prescriptionDTO.getPrescriptionMdcPropSum()}"
-                                        th:text="${mdcProp.kind.valueZhCn}"></th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <tr>
-                                    <td style="text-align: center;"
-                                        th:each="mdcProp : ${prescriptionDTO.getPrescriptionMdcPropSum()}"
-                                        th:text="${mdcProp.getFormattedLevel()}"></td>
-                                </tr>
-                                </tbody>
-                            </table>
+                        <div class="container mt-3">
+                            <button type="button" class="btn btn-primary" style="width: 100%"
+                                    th:onclick="openMdcCalculationChart([[${prescriptionDTO.getPrescriptionMdcPropSum()}]])">
+                                点击查看药性（直方图）
+                            </button>
                         </div>
                     </div>
                     <div class="card-footer text-muted flex-column-reverse"
@@ -264,66 +298,21 @@
             </div>
         </div>
     </div>
-    <!--    <div class="d-flex flex-column p-3">-->
-    <!--        <div class="col-12 overflow-auto">-->
-    <!--            <div class="container-fluid p-0" th:fragment="prescriptionTable" id="prescriptionTable">-->
-    <!--                <table class="table table-striped table-hover align-middle text-nowrap">-->
-    <!--                    <thead>-->
-    <!--                    <tr class="table-primary">-->
-    <!--                        <th style="text-align: center; width: 50px;">-->
-    <!--                            #-->
-    <!--                        </th>-->
-    <!--                        <th style="text-align: center; width: 50px;">-->
-    <!--                            序号-->
-    <!--                        </th>-->
-    <!--                        <th style="text-align: center; width: 100px;">-->
-    <!--                            药方名-->
-    <!--                        </th>-->
-    <!--                        <th style="text-align: center; width: 400px;">-->
-    <!--                            药方描述-->
-    <!--                        </th>-->
-    <!--                        <th style="text-align: center; width: 400px;">-->
-    <!--                            中药列表-->
-    <!--                        </th>-->
-    <!--                        <th style="text-align: center; width: 100px;">-->
-    <!--                            操作-->
-    <!--                        </th>-->
-    <!--                    </tr>-->
-    <!--                    </thead>-->
-    <!--                    <tbody>-->
-    <!--                    <tr th:each="prescriptionDTO, status: ${prescriptionTableDTO}">-->
-    <!--                        <td class="overflow-auto justify-content-center align-items-center text-center"-->
-    <!--                            style="max-width: 50px;">-->
-    <!--                            <label>-->
-    <!--                                <input class="form-check-input" type="checkbox">-->
-    <!--                            </label>-->
-    <!--                        </td>-->
-    <!--                        <td class="overflow-auto justify-content-center align-items-center text-center"-->
-    <!--                            style="max-width: 50px;">-->
-    <!--                            <p style="margin: 0;" th:text="${status.index + 1}"></p>-->
-    <!--                        </td>-->
-    <!--                        <td class="overflow-auto justify-content-center align-items-center text-center"-->
-    <!--                            style="max-width: 100px;">-->
-    <!--                            <p style="margin: 0;" th:text="${prescriptionDTO.name}"></p>-->
-    <!--                        </td>-->
-    <!--                        <td class="overflow-auto justify-content-center align-items-center text-center"-->
-    <!--                            style="max-width: 200px;">-->
-    <!--                            <p style="margin: 0;" th:text="${prescriptionDTO.description}"></p>-->
-    <!--                        </td>-->
-    <!--                        <td class="overflow-auto justify-content-center align-items-center text-center">-->
-    <!--                            <div class="d-flex justify-content-center">-->
-    <!--                                <a title="编辑" style="cursor:pointer">-->
-    <!--                                    <img style="height: 20px; width: 20px" src="/img/edit.png"-->
-    <!--                                         alt="编辑"/>-->
-    <!--                                </a>-->
-    <!--                            </div>-->
-    <!--                        </td>-->
-    <!--                    </tr>-->
-    <!--                    </tbody>-->
-    <!--                </table>-->
-    <!--            </div>-->
-    <!--        </div>-->
-    <!--    </div>-->
+    <div class="modal fade" id="mdcCalculationChartModal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">药性总和直方图</h4>
+                    <button type="button" class="btn-close" aria-label="Close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="container-fluid overflow-auto mb-3" style="min-width: 300px;">
+                        <canvas id="mdcCalChartElement"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="toast-container" id="toastContainer"
          style="position: fixed; top: 100px; right: 20px; z-index: 1055; min-width: 300px;"></div>
 </div>

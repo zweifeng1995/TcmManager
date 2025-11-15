@@ -5,6 +5,8 @@ package com.gucheng.tcmmanager.model.dto;
 
 import lombok.Getter;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -32,5 +34,20 @@ public enum MdcPropKind {
     MdcPropKind(String valueEnUs, String valueZhCn) {
         this.valueEnUs = valueEnUs;
         this.valueZhCn = valueZhCn;
+    }
+
+    public static MdcPropKind[] valuesBySort() {
+        List<MdcPropKind> list = new ArrayList<>();
+        list.add(HOT);
+        list.add(COLD);
+        list.add(RISE);
+        list.add(FALL);
+        list.add(DISPERSE);
+        list.add(COLLECT);
+        list.add(SUPPLEMENT);
+        list.add(ELIMINATE);
+        list.add(MOISTEN);
+        list.add(DRYNESS);
+        return list.toArray(new MdcPropKind[0]);
     }
 }

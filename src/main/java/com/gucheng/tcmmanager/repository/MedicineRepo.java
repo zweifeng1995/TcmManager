@@ -20,23 +20,17 @@ import java.util.List;
 @Repository
 public interface MedicineRepo extends JpaRepository<MedicineEntity, String> {
     @Query(value = "SELECT m.* FROM medicine m" +
-            " WHERE m.name LIKE %:name%" +
-            " AND m.mmp_research LIKE %:mmp_research%" +
-            " AND (:first_category = '' OR m.first_category = :first_category)" +
-            " AND (:second_category = '' OR m.second_category = :second_category)" +
-            " AND EXISTS (SELECT 1 FROM medicine_extend me WHERE me.medicine_id = m.id AND me.efficacy LIKE %:efficacy%)" +
-            " AND EXISTS (SELECT 1 FROM medicine_extend me WHERE me.medicine_id = m.id AND me.clinical_application LIKE %:clinical_application%)" +
-            " AND EXISTS (SELECT 1 FROM medicine_extend me WHERE me.medicine_id = m.id AND me.nature_and_flavor LIKE %:nature_and_flavor%)" +
-            " AND EXISTS (SELECT 1 FROM medicine_extend me WHERE me.medicine_id = m.id AND me.channel_tropism LIKE %:channel_tropism%)",
+            " WHERE (:first_category = '' OR m.first_category = :first_category) AND (:second_category = '' OR m.second_category = :second_category)" +
+            " AND (m.name LIKE %:all%" +
+            " OR m.mmp_research LIKE %:all%" +
+            " OR EXISTS (SELECT 1 FROM medicine_extend me WHERE me.medicine_id = m.id AND me.efficacy LIKE %:all%)" +
+            " OR EXISTS (SELECT 1 FROM medicine_extend me WHERE me.medicine_id = m.id AND me.clinical_application LIKE %:all%)" +
+            " OR EXISTS (SELECT 1 FROM medicine_extend me WHERE me.medicine_id = m.id AND me.nature_and_flavor LIKE %:all%)" +
+            " OR EXISTS (SELECT 1 FROM medicine_extend me WHERE me.medicine_id = m.id AND me.channel_tropism LIKE %:all%))",
             nativeQuery = true)
-    List<MedicineEntity> findByCondition(@Param("name") String name,
-                                         @Param("mmp_research") String mmpResearch,
-                                         @Param("efficacy") String efficacy,
-                                         @Param("clinical_application") String clinicalApplication,
+    List<MedicineEntity> findByCondition(@Param("all") String all,
                                          @Param("first_category") String firstCategory,
-                                         @Param("second_category") String secondCategory,
-                                         @Param("nature_and_flavor") String natureAndFlavor,
-                                         @Param("channel_tropism") String channelTropism);
+                                         @Param("second_category") String secondCategory);
 
     MedicineEntity findByName(@Param("name") String name);
 }

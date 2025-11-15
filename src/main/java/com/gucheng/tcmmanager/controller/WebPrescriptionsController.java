@@ -15,9 +15,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -40,8 +38,12 @@ public class WebPrescriptionsController {
         List<PrescriptionEntity> prescriptionEntities = prescriptionDao.findAll();
         PrescriptionTableDTO prescriptionTableDTO = new PrescriptionTableDTO();
 
+        Map<String, String> medicinePropertyKindMap = new LinkedHashMap<>();
+        Arrays.stream(MdcPropKind.valuesBySort()).forEach(value -> medicinePropertyKindMap.put(value.name(), value.getValueZhCn()));
+
         if (prescriptionEntities == null || prescriptionEntities.isEmpty()) {
             model.addAttribute("prescriptionTableDTO", prescriptionTableDTO);
+            model.addAttribute("mdcPropKindMap", medicinePropertyKindMap);
             return "prescriptions";
         }
 
@@ -75,7 +77,7 @@ public class WebPrescriptionsController {
             prescriptionDTO.setPrescriptionUpdatedTime(formatter.format(new Date(prescription.getUpdatedTime().getTime())));
 
             List<PrescriptionMdcPropDTO> medicinePropDTOList = new ArrayList<>();
-            for (MdcPropKind value : MdcPropKind.values()) {
+            for (MdcPropKind value : MdcPropKind.valuesBySort()) {
                 AtomicReference<Double> sum = new AtomicReference<>((double) 0L);
                 prescription.getMedicines().forEach(medicine -> {
                     for (MedicinePropertyEntity property : medicine.getMedicineEntity().getProperties()) {
@@ -90,8 +92,8 @@ public class WebPrescriptionsController {
             prescriptionTableDTO.getPrescriptionList().add(prescriptionDTO);
         });
 
-        log.info("prescriptionTableDTO:{}", prescriptionTableDTO);
         model.addAttribute("prescriptionTableDTO", prescriptionTableDTO);
+        model.addAttribute("mdcPropKindMap", medicinePropertyKindMap);
         return "prescriptions";
     }
 
@@ -152,7 +154,7 @@ public class WebPrescriptionsController {
             prescriptionDTO.setPrescriptionUpdatedTime(formatter.format(new Date(prescription.getUpdatedTime().getTime())));
 
             List<PrescriptionMdcPropDTO> medicinePropDTOList = new ArrayList<>();
-            for (MdcPropKind value : MdcPropKind.values()) {
+            for (MdcPropKind value : MdcPropKind.valuesBySort()) {
                 AtomicReference<Double> sum = new AtomicReference<>((double) 0L);
                 prescription.getMedicines().forEach(medicine -> {
                     for (MedicinePropertyEntity property : medicine.getMedicineEntity().getProperties()) {

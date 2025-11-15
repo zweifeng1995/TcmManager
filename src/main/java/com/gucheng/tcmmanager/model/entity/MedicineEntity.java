@@ -30,6 +30,9 @@ public class MedicineEntity {
     @Column(name = "name", nullable = false, unique = true, length = 32)
     private String name; // 药名
 
+    @Column(name = "weight", nullable = false)
+    private Double weight = 1.0; // 药名
+
     @Column(name = "first_category", nullable = false, length = 16)
     private String firstCategory; // 一级分类
 

@@ -1,12 +1,13 @@
-CREATE TABLE IF NOT EXISTS medicine
+CREATE TABLE IF NOT EXISTS test
 (
-    id              VARCHAR(16)                         NOT NULL UNIQUE, -- 药材ID
-    name            VARCHAR(32)                         NOT NULL UNIQUE, -- 药材名称
-    first_category  VARCHAR(16),                                         -- 一级分类
-    second_category VARCHAR(16),                                         -- 二级分类
-    mmp_research    VARCHAR(2048)                       NOT NULL,        -- 现代医学药理研究
-    created_time    TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,        -- 创建时间
-    updated_time    TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,        -- 更新时间
+    id              VARCHAR(16)                           NOT NULL UNIQUE, -- 药材ID
+    name            VARCHAR(32)                           NOT NULL UNIQUE, -- 药材名称
+    weight          DOUBLE(6,2) DEFAULT 1                 NOT NULL,        -- 药材权重
+    first_category  VARCHAR(16),                                           -- 一级分类
+    second_category VARCHAR(16),                                           -- 二级分类
+    mmp_research    VARCHAR(2048)                         NOT NULL,        -- 现代医学药理研究
+    created_time    TIMESTAMP   DEFAULT CURRENT_TIMESTAMP NOT NULL,        -- 创建时间
+    updated_time    TIMESTAMP   DEFAULT CURRENT_TIMESTAMP NOT NULL,        -- 更新时间
     PRIMARY KEY (id)
 );
 CREATE TABLE IF NOT EXISTS medicine_extend
